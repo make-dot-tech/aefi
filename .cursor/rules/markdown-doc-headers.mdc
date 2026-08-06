@@ -1,0 +1,36 @@
+---
+description: Require Status and Last updated headers on project Markdown docs
+globs: "**/*.md"
+alwaysApply: false
+---
+
+# Markdown doc headers
+
+Every project Markdown document must include status metadata immediately under the title (H1).
+
+```md
+# Document Title
+
+**Status**: Draft
+**Last updated**: YYYY-MM-DD
+```
+
+## Rules
+
+- Place these two fields on the lines directly under the H1, before any other content
+- **Status** values: `Draft`, `Active`, or `Deprecated`
+- **Last updated**: ISO date `YYYY-MM-DD` (use today's date when creating or meaningfully revising)
+- When editing an existing doc, bump **Last updated** if the content change is substantive
+- Do not invent other header fields unless the doc type already defines them
+- README indexes and short stubs follow the same convention
+
+## Example
+
+```md
+# Indexing Arc Events
+
+**Status**: Draft
+**Last updated**: 2026-08-06
+
+Source: ...
+```
