@@ -32,7 +32,7 @@ Safety: \<1/3 faulty validators. Liveness: ≥2/3 honest online.
 
 Roadmap: multi-proposer, fewer consensus rounds, possible permissioned PoS.
 
-### Aefi
+### aefi
 
 - Trust model for settlement evidence is institutional PoA BFT, not anonymous stake
 - Indexer design stays “process once on inclusion”
@@ -58,7 +58,7 @@ Priority tip: usually `0`; small tip under congestion. Query `eth_maxPriorityFee
 
 Benefits for agents: predictable USDC-denominated costs, less fee-bump retry logic, easy reconciliation in the same unit as payments.
 
-### Aefi
+### aefi
 
 - Explain Transaction can show payment + gas in USDC without FX
 - Micropayments / Memo-annotated txs are economically viable on Arc public path

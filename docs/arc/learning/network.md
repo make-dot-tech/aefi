@@ -24,7 +24,7 @@ Consensus (Malachite BFT)  →  sub-second finality, no reorgs
 Execution (Reth / EVM)     →  Solidity + standard Ethereum tooling
 ```
 
-Other notable features (lower priority for Aefi Phase 1):
+Other notable features (lower priority for aefi Phase 1):
 
 - Opt-in privacy via Arc Privacy Sector (APS) — evidence blind spot when used
 - Post-quantum wallet signatures (SLH-DSA-SHA2-128s)
@@ -37,14 +37,14 @@ From [Integrate](https://docs.arc.io/integrate):
 2. **Deterministic finality** — one confirmation is enough; tx lifecycle is `pending | final`
 3. **Dual USDC interface** — native 18 decimals vs ERC-20 6 decimals, same underlying balance
 
-## Build stack (adjacent to Aefi)
+## Build stack (adjacent to aefi)
 
-| Piece | Role vs Aefi |
+| Piece | Role vs aefi |
 | --- | --- |
-| App Kits | Creates multichain payment workflows Aefi must explain |
+| App Kits | Creates multichain payment workflows aefi must explain |
 | Account abstraction | Agents often spend via smart wallets / session keys |
-| Data indexers (Envio, Goldsky, The Graph, Thirdweb) | Possible raw-feed partners; Aefi owns matching + confidence |
-| Compliance vendors (Elliptic, TRM) | Screen/risk; not Aefi’s job |
+| Data indexers (Envio, Goldsky, The Graph, Thirdweb) | Possible raw-feed partners; aefi owns matching + confidence |
+| Compliance vendors (Elliptic, TRM) | Screen/risk; not aefi’s job |
 
 ## Stable assets
 
@@ -52,6 +52,6 @@ From [Integrate](https://docs.arc.io/integrate):
 - **EURC** — euro-denominated transfers
 - **USYC** — onchain yield
 
-## Aefi takeaway
+## aefi takeaway
 
-Arc is the settlement substrate. Aefi indexes its economic and identity activity; it does not replace Arc wallets, runtimes, or marketplaces.
+Arc is the settlement substrate. aefi indexes its economic and identity activity; it does not replace Arc wallets, runtimes, or marketplaces.

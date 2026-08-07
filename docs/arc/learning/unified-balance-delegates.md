@@ -27,7 +27,7 @@ Delegate (signs spends)
 | `depositFor` | any funder | Permissionless deposit into owner's balance |
 | `spend` with `sourceAccount` | delegate | Draw from owner's Unified Balance |
 
-## Rules that matter for Aefi
+## Rules that matter for aefi
 
 1. **Chain-specific** — authorizing on Base does not authorize on Arc/Ethereum/etc. Mandate assessment must be per-source-chain.
 2. **Status lifecycle** — `none` → `pending` → `ready`. Confirmation can take up to ~15 minutes on Ethereum/Base/Arbitrum; near-instant on Arc/Avalanche.
@@ -36,9 +36,9 @@ Delegate (signs spends)
 5. **Fees reduce received amount** — provider / gas / forwarder fees deducted; Explained payment amount ≠ requested spend amount.
 6. **Forwarder path** — destination may mint via Forwarding Service; result may include `transferId` instead of a locally submitted destination tx hash.
 
-## Mapping to Aefi delegated mandate
+## Mapping to aefi delegated mandate
 
-| Unified Balance concept | Aefi object / field |
+| Unified Balance concept | aefi object / field |
 | --- | --- |
 | Owner address | `principal` / wallet owner |
 | Delegate address | `agent` acting wallet / delegated signer |

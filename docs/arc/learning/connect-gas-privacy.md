@@ -41,7 +41,7 @@ Common errors: `transaction underpriced`, `intrinsic gas too low`, `insufficient
 
 Gas tracker: https://testnet.arcscan.app/gas-tracker
 
-### Aefi
+### aefi
 
 - Payment explanations can show settlement amount + gas fee in the same asset (USDC)
 - Fee is **not** a Transfer log — compute from receipt (`gasUsed × effectiveGasPrice`)
@@ -59,6 +59,6 @@ Arc Privacy Sector (APS):
 - **No public execution results, return values, or event logs**
 - Default-deny isolation; events off by default; trust domains + access policies
 
-### Aefi coverage implication
+### aefi coverage implication
 
 When APS ships, private agent commerce will create intentional **mediation / collection gaps**. Treat as `mediation_coverage_incomplete` / unknown coverage unless authorized private-state disclosure is provided. Do not treat absence of public Transfer/Memo as proof of non-payment.

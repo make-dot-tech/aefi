@@ -77,11 +77,11 @@ Also:
 
 Address: `0x522fAf9A91c41c443c66765030741e4AaCe147D0`
 
-Same CallFrom pattern for batched calls. Compliance and Aefi attribution must use original sender, not the Multicall3From address.
+Same CallFrom pattern for batched calls. Compliance and aefi attribution must use original sender, not the Multicall3From address.
 
-## Aefi mapping
+## aefi mapping
 
-| Arc field | Aefi use |
+| Arc field | aefi use |
 | --- | --- |
 | `memoId` | Indexed key — e.g. hash of `job_id` / `task_execution_id` |
 | `memo` bytes | Versioned structured payload (SDK-defined) |
@@ -91,4 +91,4 @@ Same CallFrom pattern for batched calls. Compliance and Aefi attribution must us
 
 Maps directly to v1 confidence reason `exact_job_id_memo`.
 
-SDK implication: Aefi memo helpers should encode a versioned schema and document the EOA-only limitation. AA agents need an alternate correlation path until Arc supports Memo for smart accounts.
+SDK implication: aefi memo helpers should encode a versioned schema and document the EOA-only limitation. AA agents need an alternate correlation path until Arc supports Memo for smart accounts.

@@ -35,7 +35,7 @@ Arc testnet: domain `26`, Wallet `0x0077777d7EBA4688BDeF3E311b846F25870A19B9`, M
 
 ### TransferSpec
 
-Crosschain identity = `keccak256(TransferSpec)`. Same hash emitted on mint and corresponding burn → **primary Gateway join key** for Aefi (`gateway_transfer_linked`).
+Crosschain identity = `keccak256(TransferSpec)`. Same hash emitted on mint and corresponding burn → **primary Gateway join key** for aefi (`gateway_transfer_linked`).
 
 Key fields: source/dest domains & contracts & tokens, `sourceDepositor`, `destinationRecipient`, `sourceSigner`, `destinationCaller` (0 = any), `value`, `salt`, `hookData`.
 
@@ -70,7 +70,7 @@ Same-chain withdrawal still uses mint/burn loop (no unsigned “pull from wallet
 - Removal does **not** invalidate already-signed burn intents until they expire
 - API reflects revocations when onchain removal is finalized
 
-Maps to Aefi mandate, but coarser than Cloudflare Virtual Wallet allowlists / per-tx caps.
+Maps to aefi mandate, but coarser than Cloudflare Virtual Wallet allowlists / per-tx caps.
 
 ## ERC-1271 programmable authorization
 
@@ -97,7 +97,7 @@ Periodic:
 
 Scheme name in x402 accepts: `GatewayWalletBatched` vs exact onchain (`ExactEvmScheme`).
 
-**Evidence reality for Aefi:**
+**Evidence reality for aefi:**
 
 | Layer | What exists |
 | --- | --- |

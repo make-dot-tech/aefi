@@ -5,7 +5,7 @@
 
 Source: [Contract interfaces and events](https://developers.circle.com/gateway/references/contract-interfaces-and-events). Arc addresses: [contract-addresses.md](./contract-addresses.md).
 
-## Index priority (Aefi)
+## Index priority (aefi)
 
 | Priority | Contract | Events |
 | --- | --- | --- |
@@ -93,7 +93,7 @@ event AttestationUsed(
 
 Destination-side mint evidence. `sourceDepositor` / `sourceSigner` are `bytes32` (cross-domain address encoding).
 
-## Aefi correlation recipes
+## aefi correlation recipes
 
 ```text
 Instant crosschain spend:

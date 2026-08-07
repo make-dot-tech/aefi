@@ -1,9 +1,9 @@
-# Aefi Implications from Arc
+# aefi Implications from Arc
 
 **Status**: Draft
 **Last updated**: 2026-08-06
 
-Synthesis of Arc learnings against [Aefi product spec v1](../../ideation/spec/v1.md).
+Synthesis of Arc learnings against [aefi product spec v1](../../ideation/spec/v1.md).
 
 Related learning notes: [contract-addresses](./contract-addresses.md), [stablecoins-and-finality](./stablecoins-and-finality.md), [unified-balance-delegates](./unified-balance-delegates.md), [connect-gas-privacy](./connect-gas-privacy.md), [consensus-and-fees](./consensus-and-fees.md), [arc-system-architecture](./arc-system-architecture.md), [erc-8004](./erc-8004.md), [erc-8183](./erc-8183.md), [gateway-and-x402](./gateway-and-x402.md), [gateway-protocol](./gateway-protocol.md), [gateway-events](./gateway-events.md), [x402-eip3009-evidence](./x402-eip3009-evidence.md), [cloudflare-authority](./cloudflare-authority.md).
 
@@ -15,14 +15,14 @@ Principal / agent wallets (EOA, AA, Circle Wallets, Unified Balance delegates)
       App Kits / ERC-8183 escrow / x402 (exact or Gateway-batched) / raw transfers
   → Arc settlement (EIP-7708 Transfer + optional Memo) and/or Gateway mint
   → ERC-8004 identity / reputation / validation
-Aefi correlates those records into financial intelligence
+aefi correlates those records into financial intelligence
 ```
 
-Arc creates identities, jobs, payments, and settlement. Aefi indexes, connects, explains, and assesses — it does not become a registry, wallet, escrow, or runtime.
+Arc creates identities, jobs, payments, and settlement. aefi indexes, connects, explains, and assesses — it does not become a registry, wallet, escrow, or runtime.
 
-## What Arc / Circle give Aefi (Phase 1+)
+## What Arc / Circle give aefi (Phase 1+)
 
-| Primitive | Aefi use | Confidence hooks |
+| Primitive | aefi use | Confidence hooks |
 | --- | --- | --- |
 | System USDC `Transfer` | Payment settlement truth | payment settled |
 | Memo + `memoId` / payload | Job/task/payment correlation | `exact_job_id_memo` |
@@ -51,7 +51,7 @@ Arc creates identities, jobs, payments, and settlement. Aefi indexes, connects, 
 3. **AA session keys / Circle wallet policies** — provider-specific adapters
 4. **Cloudflare Virtual Wallets / Agent Access** — Phase 2; best for task capability ceiling
 
-## Indexer rules Aefi must enforce
+## Indexer rules aefi must enforce
 
 1. Prefer system emitter Transfer (`0xff…fe`, 18 decimals) as settlement amount
 2. Never double-count ERC-20 USDC Transfer (`0x3600…0000`, 6 decimals)
@@ -91,7 +91,7 @@ Weaker until adapters + receipt schemas land:
 
 ## Open questions
 
-1. Exact Memo payload convention for Aefi
+1. Exact Memo payload convention for aefi
 2. Arc AgenticCommerce ABI drift vs EIP-8183 (`fund` args)
 3. Gateway mint event schemas + forwarder `transferId` linkage on Arc
 4. Whether nanopayment batch settlement exposes per-authorization index keys

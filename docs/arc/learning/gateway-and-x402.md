@@ -45,9 +45,9 @@ Agent Nanopayments = this flow for AI agents (Circle CLI / SDKs, Agent Marketpla
 
 Additive to “exact” onchain x402: sellers can offer both standard onchain and `GatewayWalletBatched` options; clients/facilitators route by scheme name.
 
-## Aefi implications (important)
+## aefi implications (important)
 
-| Payment path | What Aefi sees on Arc | Confidence notes |
+| Payment path | What aefi sees on Arc | Confidence notes |
 | --- | --- | --- |
 | Direct Arc Transfer (+ Memo) | Per-payment Transfer (+ Memo) | High joinability via memo/job id |
 | ERC-8183 escrow | Fund/complete events | Strong job linkage |

@@ -73,7 +73,7 @@ Before Zero5, native movements used custom events from `0x1800…0000` (`NativeC
 - Finality on inclusion — no reorg handling
 - Local tools like Foundry `anvil` do **not** reproduce Arc-specific behavior (EIP-7708, blocklist, native precompiles)
 
-## Other EVM deltas (lower Aefi priority)
+## Other EVM deltas (lower aefi priority)
 
 - `PREVRANDAO` always `0` (no onchain randomness)
 - No blob (type-3) transactions

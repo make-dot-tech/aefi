@@ -96,7 +96,7 @@ Encoded as base64 in the payment signature header. SDK `BatchEvmScheme` builds t
 
 Treat `transaction` as a **settlement reference** from Circle (may be batch/queue id — do not assume it is always an Arc tx hash until confirmed against chain). Prefer joining later to onchain `GatewayBurned` / batch txs when available.
 
-**Verify ≠ paid.** Aefi confidence:
+**Verify ≠ paid.** aefi confidence:
 
 - `verify` only → low / unverified settlement
 - successful `settle` + receipt → medium (offchain lock, pending batch)
@@ -116,7 +116,7 @@ circle gateway deposit → circle services search/inspect → circle services pa
 
 Payment still settles against Gateway balance via x402. Marketplace is discovery UX, not a separate evidence schema — store CLI/SDK settle responses + authorization payload as evidence.
 
-## Aefi evidence object sketch
+## aefi evidence object sketch
 
 ```json
 {
@@ -144,7 +144,7 @@ Payment still settles against Gateway balance via x402. Marketplace is discovery
 
 Upgrade confidence when linked to onchain batch / `GatewayBurned` / seller withdrawal.
 
-## SDK packaging note for Aefi
+## SDK packaging note for aefi
 
 Helpers should:
 

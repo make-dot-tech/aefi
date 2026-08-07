@@ -77,7 +77,7 @@ Mnemonic `test test ... junk`, index 1:
 
 Value transfers to/from this address revert — useful for testing failed-payment / blocklist evidence paths.
 
-## Aefi notes
+## aefi notes
 
 - Prefer system emitter for USDC settlement; ERC-20 USDC address is still needed for approvals, blocklist events, and interface metadata
 - GatewayWallet / GatewayMinter are Phase 2 (or late Phase 1) for Unified Balance spend lineage

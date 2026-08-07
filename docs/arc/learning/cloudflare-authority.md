@@ -3,13 +3,13 @@
 **Status**: Draft
 **Last updated**: 2026-08-06
 
-Sources: [Agent Access Model](https://blog.cloudflare.com/the-agent-access-model), [Cloudflare Wallets](https://blog.cloudflare.com/wallets). Vendor-neutral mapping already sketched in [Aefi spec v1](../../ideation/spec/v1.md) §4–7.
+Sources: [Agent Access Model](https://blog.cloudflare.com/the-agent-access-model), [Cloudflare Wallets](https://blog.cloudflare.com/wallets). Vendor-neutral mapping already sketched in [aefi spec v1](../../ideation/spec/v1.md) §4–7.
 
-These are **not Arc-native**. They are the strongest published model for Aefi’s *task execution authority* layer, which Arc settlement alone does not provide.
+These are **not Arc-native**. They are the strongest published model for aefi’s *task execution authority* layer, which Arc settlement alone does not provide.
 
 ## Dual wallet model (mandate layer)
 
-| Cloudflare | Meaning | Aefi concept |
+| Cloudflare | Meaning | aefi concept |
 | --- | --- | --- |
 | Account Wallet | Human/org owner wallet; fund/remove | `principal` + funding wallet |
 | Virtual Wallet | Agent-operated via API keys | `delegated_wallet` + `agent` |
@@ -60,7 +60,7 @@ virtual wallet            → delegated_wallet
 | Audit of tool/network acts | Partial (onchain only) | Activity Log (if mediated) |
 | AA / Memo tension | Memo EOA-only | Separate from Arc Memo |
 
-Aefi Phase 1 can verify **payment settled** and **job completed** on Arc with high confidence, while often returning `authorization_evidence_missing` / `capability_state_unresolved` for task authority — unless Cloudflare (or similar) adapters ingest credentials, capability transitions, and activity logs.
+aefi Phase 1 can verify **payment settled** and **job completed** on Arc with high confidence, while often returning `authorization_evidence_missing` / `capability_state_unresolved` for task authority — unless Cloudflare (or similar) adapters ingest credentials, capability transitions, and activity logs.
 
 ## Confidence / coverage rules to preserve
 

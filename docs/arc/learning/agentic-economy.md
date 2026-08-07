@@ -14,7 +14,7 @@ Arc treats agents as first-class economic participants via:
 - Stable USDC gas + sub-second finality
 - Adjacent: x402 / Nanopayments sample apps, Circle Wallets, AA providers
 
-Aefi does **not** replace these registries or escrow contracts. It indexes and explains the evidence they produce.
+aefi does **not** replace these registries or escrow contracts. It indexes and explains the evidence they produce.
 
 Deeper EIP notes: [erc-8004.md](./erc-8004.md), [erc-8183.md](./erc-8183.md). Nanopayment rail: [gateway-and-x402.md](./gateway-and-x402.md).
 
@@ -45,7 +45,7 @@ Testnet contracts:
 - Agent owner requests validation; validator submits response
 - Status readable via `getValidationStatus`
 
-### Aefi mapping
+### aefi mapping
 
 ```text
 ERC-8004 identity NFT  → agent identity (+ identity_sources type erc_8004)
@@ -91,7 +91,7 @@ Notes:
 - `hook` can be `address(0)` for the basic flow
 - Reference `getJob()` does not return the deliverable hash — track from submit tx / local state
 
-### Aefi mapping
+### aefi mapping
 
 ```text
 ERC-8183 job          → commerce_job
@@ -109,7 +109,7 @@ Arc supports ERC-4337 via ecosystem providers (Biconomy, Pimlico, Zerodev, Privy
 
 Tension with Memo: Memo requires direct EOA callers. Agent spend via AA/session keys may not get native Memo correlation unless a separate EOA Memo tx or offchain metadata is used.
 
-Unified Balance delegates (EOA delegate signing for owner) are a closer fit to Aefi’s delegated-mandate model than opaque AA bundler txs.
+Unified Balance delegates (EOA delegate signing for owner) are a closer fit to aefi’s delegated-mandate model than opaque AA bundler txs.
 
 ## Sample apps called out by Arc
 

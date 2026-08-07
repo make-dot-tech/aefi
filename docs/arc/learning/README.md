@@ -3,7 +3,7 @@
 **Status**: Draft
 **Last updated**: 2026-08-06
 
-Working notes from Arc official docs ([docs.arc.io](https://docs.arc.io/)), focused on what Aefi needs to index, correlate, and explain.
+Working notes from Arc official docs ([docs.arc.io](https://docs.arc.io/)), focused on what aefi needs to index, correlate, and explain.
 
 This set covers Arc L1 mechanics, indexing primitives, App Kits / Gateway / x402 payment rails, and ERC-8004/8183 agent commerce. Start with [aefi-implications.md](./aefi-implications.md) for the synthesis.
 
@@ -26,11 +26,11 @@ This set covers Arc L1 mechanics, indexing primitives, App Kits / Gateway / x402
 | [gateway-protocol.md](./gateway-protocol.md) | TransferSpec / BurnIntent / attestation / delegates / ERC-1271 |
 | [gateway-events.md](./gateway-events.md) | GatewayWallet / GatewayMinter event ABIs + join recipes |
 | [x402-eip3009-evidence.md](./x402-eip3009-evidence.md) | EIP-3009 signing, payment payloads, verify/settle evidence |
-| [cloudflare-authority.md](./cloudflare-authority.md) | Virtual Wallets + Agent Access Model → Aefi authority layers |
+| [cloudflare-authority.md](./cloudflare-authority.md) | Virtual Wallets + Agent Access Model → aefi authority layers |
 | [agentic-economy.md](./agentic-economy.md) | Arc agent stack overview (8004/8183/AA) |
 | [erc-8004.md](./erc-8004.md) | EIP-8004 identity / reputation / validation |
 | [erc-8183.md](./erc-8183.md) | EIP-8183 job escrow state machine + events |
-| [aefi-implications.md](./aefi-implications.md) | How Arc maps onto the Aefi v1 spec |
+| [aefi-implications.md](./aefi-implications.md) | How Arc maps onto the aefi v1 spec |
 
 ## Doc convention
 

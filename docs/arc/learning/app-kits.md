@@ -13,7 +13,7 @@ Packages: `@circle-fin/app-kit` (all-in-one) or separate Bridge / Swap / Unified
 
 ## Capabilities
 
-| Capability | Behavior | Aefi implication |
+| Capability | Behavior | aefi implication |
 | --- | --- | --- |
 | **Send** | Same-chain wallet → wallet transfer | Simplest settlement evidence |
 | **Bridge** | USDC across chains | Origin ≠ settlement chain; need CCTP lineage |
@@ -32,7 +32,7 @@ Key behaviors from the delegate quickstart:
 - Spend to Arc can use Forwarding Service (`useForwarder: true`) — destination mint may not be locally submitted; result may include `transferId`
 - Received amount can be less than requested after provider / gas / forwarder fees
 
-This is a concrete Arc/Circle form of **delegated mandate**: owner authorizes delegate spend rights; Aefi should model owner vs delegate vs recipient distinctly.
+This is a concrete Arc/Circle form of **delegated mandate**: owner authorizes delegate spend rights; aefi should model owner vs delegate vs recipient distinctly.
 
 ## Economic event shape
 

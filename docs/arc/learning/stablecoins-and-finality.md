@@ -31,7 +31,7 @@ Every USDC movement emits system EIP-7708 `Transfer` (18 decimals). Index that s
 - **EURC** — standard ERC-20, 6 decimals, euro payments / FX
 - **USYC** — yield-bearing MMF shares; institutional, non-US, \$100k minimum; allowlisted via Entitlements + Teller
 
-### Aefi takeaway
+### aefi takeaway
 
 Asset model is simple for Phase 1 (USDC + EURC). Treat amounts in a canonical atomic unit (prefer 18-decimal USDC). USYC is later / niche. Fee and payment share the same unit of account — Explain Transaction can show payment + gas in USDC without FX conversion.
 
@@ -51,10 +51,10 @@ Once ≥2/3 of BFT validators sign a block, it is irreversible. No confirmation 
 | Ethereum L1 | ~12–15 min |
 | Typical L2 | ~7 day withdrawal windows |
 
-### Developer / Aefi implications
+### Developer / aefi implications
 
 - Verify Payment can mark settled on inclusion (one confirmation)
 - Indexer: no reorg rollback; process each block once
 - Safe to fire downstream webhooks / DB writes immediately on commit
-- Composable multi-step flows (swap-then-bridge) can chain without confirmation delays between steps — but Aefi must still correlate multi-leg economic events
+- Composable multi-step flows (swap-then-bridge) can chain without confirmation delays between steps — but aefi must still correlate multi-leg economic events
 - Settlement finality is auditable — strong fit for evidence-backed confidence

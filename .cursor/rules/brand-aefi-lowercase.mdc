@@ -1,0 +1,29 @@
+---
+description: Keep the aefi brand name lowercase in all project writing
+globs: "**/*.{md,mdc,tsx,ts,jsx,js,html}"
+alwaysApply: false
+---
+
+# Brand: aefi (lowercase)
+
+The product brand is **aefi**, always lowercase. Never write `Aefi` or `AEFI` in product/brand contexts.
+
+## Canonical forms
+
+| Surface | Form |
+| --- | --- |
+| Brand / wordmark | `aefi` |
+| Domain | `aefi.io` |
+| Prose | `aefi helps autonomous agents...` |
+| Product refs | `aefi API`, `aefi Provider Search`, `built by aefi` |
+
+## Rules
+
+- Prefer lowercase even at sentence start when referring to the brand (same pattern as npm, eBay, iOS)
+- Do not expand the name as an acronym in user-facing copy
+- Code identifiers may use `aefi` prefixes (`aefi-`, `AEFI_` only if an existing code convention requires SCREAMING_SNAKE — prefer `aefi_` / `Aefi` class names only when language style guides force PascalCase types; brand prose still stays `aefi`)
+- For TypeScript/JavaScript **exported type/class names**, PascalCase `Aefi...` is acceptable as an identifier; comments and docs still say `aefi`
+
+## Why
+
+The logo wordmark starts with a lowercase **a** and flows into lowercase **fi**. Title case mismatches the mark, feels less software-native, and collides with the uppercase medical acronym AEFI.

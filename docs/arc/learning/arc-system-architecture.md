@@ -61,7 +61,7 @@ Developer access is permissionless at every public phase. Validators remain perm
 
 Testnet Q1 2026 snapshot (from docs): 100% uptime, ~0.48s blocks, ~30.7M txs, ~916K wallets.
 
-## Aefi implications
+## aefi implications
 
 - Settlement evidence final at commit — no confirmation ladder
 - Trust assumption: institutional PoA, not anonymous L1 stake — disclose in confidence/coverage
