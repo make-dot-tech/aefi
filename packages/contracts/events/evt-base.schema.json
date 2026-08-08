@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aefi.io/schemas/events/evt-base.json",
+  "title": "CanonicalEventBase",
+  "type": "object",
+  "required": [
+    "id",
+    "chain_id",
+    "block_number",
+    "block_hash",
+    "tx_hash",
+    "log_index",
+    "address",
+    "event_name",
+    "schema_version"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "evt:{chain_id}:{tx_hash}:{log_index}"
+    },
+    "chain_id": { "type": "integer" },
+    "block_number": { "type": "integer" },
+    "block_hash": { "type": "string" },
+    "tx_hash": { "type": "string" },
+    "log_index": { "type": "integer" },
+    "address": { "type": "string" },
+    "topic0": { "type": ["string", "null"] },
+    "event_name": { "type": "string" },
+    "observed_at": { "type": "string", "format": "date-time" },
+    "raw_topics": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "raw_data": { "type": "string" },
+    "decoded": { "type": "object" },
+    "schema_version": { "type": "string" }
+  }
+}

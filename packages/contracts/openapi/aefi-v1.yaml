@@ -1,0 +1,223 @@
+openapi: 3.1.0
+info:
+  title: aefi API
+  version: 0.1.0
+  description: Evidence and financial-intelligence API for agent commerce (scaffold).
+servers:
+  - url: http://localhost:8787
+    description: Local scaffold
+paths:
+  /health:
+    get:
+      operationId: health
+      summary: Liveness
+      responses:
+        "200":
+          description: OK
+  /v1/payments/verify:
+    post:
+      operationId: verifyPayment
+      summary: Verify a payment against evidence
+      x-mcp-tool: verify_payment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerifyPaymentRequest"
+      responses:
+        "200":
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AefiEnvelope"
+  /v1/transactions/{hash}:
+    get:
+      operationId: explainTransaction
+      summary: Explain a transaction
+      x-mcp-tool: explain_transaction
+      parameters:
+        - name: hash
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Explanation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AefiEnvelope"
+  /v1/jobs/{job_id}:
+    get:
+      operationId: lookupJob
+      summary: Look up an ERC-8183 job and linked evidence
+      x-mcp-tool: lookup_job
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Job lookup
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AefiEnvelope"
+  /v1/agents/{id}/activity:
+    get:
+      operationId: getAgentActivity
+      summary: Agent activity timeline
+      x-mcp-tool: get_agent_activity
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Activity
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AefiEnvelope"
+  /v1/authority/check:
+    post:
+      operationId: checkAuthority
+      summary: Mandate + task authority assessment
+      x-mcp-tool: check_authority
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Authority assessment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AefiEnvelope"
+  /v1/tasks/{task_execution_id}:
+    get:
+      operationId: traceTask
+      summary: Trace a task execution
+      x-mcp-tool: trace_task
+      parameters:
+        - name: task_execution_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Task trace
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AefiEnvelope"
+  /v1/providers/search:
+    post:
+      operationId: searchProviders
+      summary: Search providers by structured filters
+      x-mcp-tool: search_providers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AefiEnvelope"
+
+components:
+  schemas:
+    Confidence:
+      type: string
+      enum: [high, medium, low, unverified]
+    Coverage:
+      type: object
+      required: [status, known_gaps]
+      properties:
+        status:
+          type: string
+          enum: [complete, substantial, partial, minimal, unknown]
+        known_gaps:
+          type: array
+          items:
+            type: string
+    EvidenceRef:
+      type: object
+      required: [evidence_id, type, source, reference]
+      properties:
+        evidence_id:
+          type: string
+        type:
+          type: string
+        source:
+          type: string
+        reference:
+          type: string
+        supports:
+          type: array
+          items:
+            type: string
+    AefiEnvelope:
+      type: object
+      required:
+        - summary
+        - confidence
+        - confidence_reasons
+        - confidence_model_version
+        - evidence
+        - coverage
+      properties:
+        summary:
+          type: string
+        result: {}
+        confidence:
+          $ref: "#/components/schemas/Confidence"
+        confidence_reasons:
+          type: array
+          items:
+            type: string
+        confidence_model_version:
+          type: string
+        evidence:
+          type: array
+          items:
+            $ref: "#/components/schemas/EvidenceRef"
+        coverage:
+          $ref: "#/components/schemas/Coverage"
+        graph_refs:
+          type: object
+          properties:
+            node_ids:
+              type: array
+              items:
+                type: string
+    VerifyPaymentRequest:
+      type: object
+      properties:
+        tx_hash:
+          type: string
+        payment_id:
+          type: string
+        transfer_ref:
+          type: string
+        refresh:
+          type: boolean
+          default: false

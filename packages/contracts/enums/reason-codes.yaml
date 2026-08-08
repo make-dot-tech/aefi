@@ -1,0 +1,49 @@
+# Controlled confidence / assessment reason codes (v1 §9 + auth statuses).
+# Adding a code requires an enum PR + composer/rules update.
+
+schema_version: "0.1.0"
+
+reason_codes:
+  - exact_job_id_memo
+  - job_contract_reference
+  - escrow_release_after_acceptance
+  - counterparty_amount_time
+  - signed_completion_receipt
+  - requester_signed_acceptance
+  - provider_signed_acknowledgement
+  - erc_8004_identity_match
+  - erc_8004_reputation_event
+  - erc_8183_job_lifecycle
+  - x402_payment_reference
+  - delegated_wallet_linked
+  - principal_agent_linked
+  - mandate_active_at_execution
+  - amount_within_limit
+  - service_allowed
+  - counterparty_allowed
+  - task_scoped_credential
+  - task_execution_linked
+  - capability_state_matched
+  - capability_active_at_execution
+  - capability_removed_before_action
+  - policy_decision_allowed
+  - policy_decision_denied
+  - enforcement_activity_event
+  - credential_expired_at_execution
+  - cctp_origin_matched
+  - gateway_transfer_linked
+  - wallet_clustering_heuristic
+  - payment_only_observed
+  - agent_self_report
+  - mediation_coverage_incomplete
+  - authorization_evidence_missing
+  - insufficient_evidence
+  - indexer_gap
+  - scaffold_stub
+
+coverage_statuses:
+  - complete
+  - substantial
+  - partial
+  - minimal
+  - unknown

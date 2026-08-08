@@ -1,0 +1,104 @@
+schema_version: "0.1.0"
+
+nodes:
+  - label: Principal
+    id_pattern: "principal:*"
+  - label: Agent
+    id_pattern: "agent:*"
+  - label: Wallet
+    id_pattern: "wallet:{chain_id}:{address}"
+  - label: Mandate
+    id_pattern: "mandate:*"
+  - label: Job
+    id_pattern: "job:erc8183:{chain_id}:{job_id}"
+  - label: Payment
+    id_pattern: "pay:*"
+  - label: Outcome
+    id_pattern: "outcome:*"
+  - label: TaskExecution
+    id_pattern: "task:*"
+  - label: CapabilityState
+    id_pattern: "capstate:*"
+  - label: Evidence
+    id_pattern: "evidence:*"
+  - label: TransferEvent
+    id_pattern: "xfer:*"
+  - label: MemoEvent
+    id_pattern: "memo:*"
+  - label: GatewayTransfer
+    id_pattern: "gw:*"
+  - label: Conclusion
+    id_pattern: "concl:*"
+    properties:
+      - confidence
+      - confidence_reasons
+      - evidence_count
+      - coverage_status
+      - known_gaps
+      - confidence_model_version
+      - computed_at
+
+relationships:
+  - type: AUTHORIZES
+    from: Principal
+    to: Agent
+  - type: CONTROLS
+    from: Agent
+    to: Wallet
+  - type: GRANTS
+    from: Mandate
+    to: Agent
+  - type: BINDS
+    from: Mandate
+    to: Wallet
+  - type: SETTLED_BY
+    from: Payment
+    to: TransferEvent
+  - type: ANNOTATED_BY
+    from: Payment
+    to: MemoEvent
+  - type: FOR_JOB
+    from: Payment
+    to: Job
+  - type: UNDER_MANDATE
+    from: Payment
+    to: Mandate
+  - type: REQUESTER
+    from: Job
+    to: Agent
+  - type: PROVIDER
+    from: Job
+    to: Agent
+  - type: EVALUATOR
+    from: Job
+    to: Agent
+  - type: FROM_WALLET
+    from: Payment
+    to: Wallet
+  - type: TO_WALLET
+    from: Payment
+    to: Wallet
+  - type: HAS_OUTCOME
+    from: Job
+    to: Outcome
+  - type: SAME_TRANSFER_SPEC
+    from: GatewayTransfer
+    to: GatewayTransfer
+  - type: SUPPORTS
+    from: Evidence
+    to: Conclusion
+  - type: ABOUT
+    from: Conclusion
+    to: Payment
+  - type: USES_MANDATE
+    from: TaskExecution
+    to: Mandate
+  - type: DURING_TASK
+    from: Payment
+    to: TaskExecution
+
+notes: |
+  Graph is a projection from Postgres events + offchain receipts.
+  Rebuildable; chain facts live in Postgres.
+  Deliverable #3 also uses FROM_WALLET/TO_WALLET and EVALUATOR for Arc P0 projection.
+  Evidence-[:SUPPORTS]-> may target Payment, Job, Agent, or Conclusion.

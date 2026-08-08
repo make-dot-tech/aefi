@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aefi.io/schemas/events/evt-transfer.json",
+  "title": "TransferEvent",
+  "type": "object",
+  "required": ["id", "from_addr", "to_addr", "value", "decimals", "emitter_role"],
+  "properties": {
+    "id": { "type": "string" },
+    "from_addr": { "type": "string" },
+    "to_addr": { "type": "string" },
+    "value": { "type": "string" },
+    "decimals": { "type": "integer" },
+    "emitter_role": {
+      "type": "string",
+      "enum": ["system_usdc", "erc20_usdc", "eurc", "other"]
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "chain_id": 5042002,
+  "name": "arc-testnet",
+  "rpc_url_default": "https://rpc.testnet.arc.io",
+  "priority": "P0",
+  "contracts": [
+    {
+      "name": "system_usdc_transfer_emitter",
+      "address": "0xfffffffffffffffffffffffffffffffffffffffe",
+      "family": "transfer",
+      "events": ["Transfer"],
+      "abi_file": "erc20_transfer.json",
+      "notes": "EIP-7708 native USDC; 18 decimals; settlement truth"
+    },
+    {
+      "name": "memo",
+      "address": "0x5294E9927c3306DcBaDb03fe70b92e01cCede505",
+      "family": "memo",
+      "events": ["Memo", "BeforeMemo"],
+      "abi_file": "memo.json"
+    },
+    {
+      "name": "erc8004_identity",
+      "address": "0x8004A818BFB912233c491871b3d84c89A494BD9e",
+      "family": "erc8004",
+      "events": ["*"],
+      "abi_file": "erc8004_identity.json"
+    },
+    {
+      "name": "erc8004_reputation",
+      "address": "0x8004B663056A597Dffe9eCcC1965A193B7388713",
+      "family": "erc8004",
+      "events": ["*"],
+      "abi_file": "erc8004_reputation.json"
+    },
+    {
+      "name": "erc8004_validation",
+      "address": "0x8004Cb1BF31DAf7788923b405b754f57acEB4272",
+      "family": "erc8004",
+      "events": ["*"],
+      "abi_file": "erc8004_validation.json"
+    },
+    {
+      "name": "erc8183_agentic_commerce",
+      "address": "0x0747EEf0706327138c69792bF28Cd525089e4583",
+      "family": "erc8183",
+      "events": ["*"],
+      "abi_file": "erc8183.json"
+    }
+  ]
+}

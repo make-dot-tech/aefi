@@ -1,0 +1,14 @@
+{
+  "name": "@aefi/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "aefi shared contracts (OpenAPI, JSON Schema, enums)",
+  "files": [
+    "openapi",
+    "mcp",
+    "events",
+    "graph",
+    "disposition",
+    "enums"
+  ]
+}

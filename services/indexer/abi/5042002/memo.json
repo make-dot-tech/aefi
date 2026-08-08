@@ -1,0 +1,23 @@
+[
+  {
+    "type": "event",
+    "name": "BeforeMemo",
+    "inputs": [
+      { "indexed": true, "name": "memoIndex", "type": "uint256" }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Memo",
+    "inputs": [
+      { "indexed": true, "name": "sender", "type": "address" },
+      { "indexed": true, "name": "target", "type": "address" },
+      { "indexed": false, "name": "callDataHash", "type": "bytes32" },
+      { "indexed": true, "name": "memoId", "type": "bytes32" },
+      { "indexed": false, "name": "memo", "type": "bytes" },
+      { "indexed": false, "name": "memoIndex", "type": "uint256" }
+    ],
+    "anonymous": false
+  }
+]

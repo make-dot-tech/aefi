@@ -1,0 +1,27 @@
+[
+  {
+    "type": "event",
+    "name": "ValidationRequest",
+    "inputs": [
+      { "indexed": true, "name": "validatorAddress", "type": "address" },
+      { "indexed": true, "name": "agentId", "type": "uint256" },
+      { "indexed": false, "name": "requestURI", "type": "string" },
+      { "indexed": true, "name": "requestHash", "type": "bytes32" }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ValidationResponse",
+    "inputs": [
+      { "indexed": true, "name": "validatorAddress", "type": "address" },
+      { "indexed": true, "name": "agentId", "type": "uint256" },
+      { "indexed": true, "name": "requestHash", "type": "bytes32" },
+      { "indexed": false, "name": "response", "type": "uint8" },
+      { "indexed": false, "name": "responseURI", "type": "string" },
+      { "indexed": false, "name": "responseHash", "type": "bytes32" },
+      { "indexed": false, "name": "tag", "type": "string" }
+    ],
+    "anonymous": false
+  }
+]

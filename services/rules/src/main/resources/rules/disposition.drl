@@ -1,0 +1,14 @@
+package io.aefi.rules
+
+import io.aefi.rules.model.DispositionContext;
+import io.aefi.rules.drools.DispositionPolicies;
+
+// Single entry rule — policy salience lives in DispositionPolicies (testable Java).
+// Additional DRL rules can short-circuit later (auth statuses, mandate, etc.).
+rule "Apply disposition policy"
+    salience 100
+    when
+        $c : DispositionContext( resolved == false )
+    then
+        DispositionPolicies.apply($c);
+end

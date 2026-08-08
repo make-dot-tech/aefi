@@ -1,0 +1,48 @@
+{
+  "server": "aefi",
+  "version": "0.1.0",
+  "tools": [
+    {
+      "name": "verify_payment",
+      "description": "Verify whether a payment settled and what evidence links it to agents, jobs, and authority.",
+      "wave": "A",
+      "http": "POST /v1/payments/verify"
+    },
+    {
+      "name": "explain_transaction",
+      "description": "Explain a transaction as a structured evidence-backed narrative.",
+      "wave": "A",
+      "http": "GET /v1/transactions/{hash}"
+    },
+    {
+      "name": "lookup_job",
+      "description": "Look up an ERC-8183 job and linked payments/outcomes.",
+      "wave": "A",
+      "http": "GET /v1/jobs/{job_id}"
+    },
+    {
+      "name": "get_agent_activity",
+      "description": "Return observed activity for an agent identity or wallet (partial in Wave A).",
+      "wave": "A",
+      "http": "GET /v1/agents/{id}/activity"
+    },
+    {
+      "name": "check_authority",
+      "description": "Assess mandate and task authority for an action. May return authorization_evidence_missing until adapters exist.",
+      "wave": "B",
+      "http": "POST /v1/authority/check"
+    },
+    {
+      "name": "trace_task",
+      "description": "Trace a task execution. Returns coverage gaps until task adapters exist.",
+      "wave": "C",
+      "http": "GET /v1/tasks/{task_execution_id}"
+    },
+    {
+      "name": "search_providers",
+      "description": "Search providers by structured performance filters. Limited until graph history accumulates.",
+      "wave": "C",
+      "http": "POST /v1/providers/search"
+    }
+  ]
+}

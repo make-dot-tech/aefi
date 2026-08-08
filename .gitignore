@@ -8,3 +8,10 @@ build/
 *.log
 .venv/
 __pycache__/
+*.exe
+*.test
+services/indexer/indexer
+services/indexer/backfill
+.pnpm-store/
+coverage/
+.turbo/

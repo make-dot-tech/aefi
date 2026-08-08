@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aefi.io/schemas/disposition/fact-payload.json",
+  "title": "FactPayload",
+  "type": "object",
+  "required": ["schema_version", "subject", "facts", "evidence_types", "coverage"],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "subject": {
+      "type": "object",
+      "required": ["type", "id"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["payment", "job", "authority", "transaction", "agent", "provider", "task"]
+        },
+        "id": { "type": "string" }
+      }
+    },
+    "facts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "present", "refs"],
+        "properties": {
+          "code": { "type": "string" },
+          "present": { "type": "boolean" },
+          "strength": {
+            "type": "string",
+            "enum": ["exact", "strong", "medium", "weak"]
+          },
+          "refs": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "evidence_types": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "coverage": {
+      "type": "object",
+      "required": ["status", "known_gaps"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["complete", "substantial", "partial", "minimal", "unknown"]
+        },
+        "known_gaps": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  }
+}

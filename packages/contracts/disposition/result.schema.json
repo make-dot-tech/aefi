@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aefi.io/schemas/disposition/result.json",
+  "title": "DispositionResult",
+  "type": "object",
+  "required": ["confidence", "confidence_reasons", "confidence_model_version"],
+  "properties": {
+    "confidence": {
+      "type": "string",
+      "enum": ["high", "medium", "low", "unverified"]
+    },
+    "confidence_reasons": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "confidence_model_version": { "type": "string" },
+    "mandate_status": { "type": "string" },
+    "task_status": { "type": "string" },
+    "overall_status": { "type": "string" }
+  }
+}
