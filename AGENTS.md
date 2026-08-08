@@ -13,10 +13,12 @@ Project conventions for agents working in this repo.
 
 ## Documentation
 
-- All project `.md` files must include **Status** and **Last updated** directly under the H1
-- Allowed statuses: `Draft`, `Active`, `Deprecated`
+- Project Markdown docs must include **Status** and **Last updated** directly under the H1
+- Allowed statuses: `Draft`, `Active`, or `Deprecated`
 - Date format: `YYYY-MM-DD`
+- **Exceptions** (no status headers): root `README.md`, `run_locally.md` — see ignore list in `.cursor/rules/markdown-doc-headers.mdc`
 - Enforced by Cursor rule: `.cursor/rules/markdown-doc-headers.mdc`
+- Local setup: [`run_locally.md`](run_locally.md)
 
 ## Product context
 

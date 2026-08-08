@@ -6,7 +6,7 @@ alwaysApply: false
 
 # Markdown doc headers
 
-Every project Markdown document must include status metadata immediately under the title (H1).
+Every project Markdown document must include status metadata immediately under the title (H1), **except** files on the ignore list below.
 
 ```md
 # Document Title
@@ -15,6 +15,15 @@ Every project Markdown document must include status metadata immediately under t
 **Last updated**: YYYY-MM-DD
 ```
 
+## Ignore list
+
+These paths do **not** require **Status** / **Last updated** (and should not include them):
+
+- `README.md` (repo root only)
+- `run_locally.md` (repo root)
+
+All other `.md` files (including nested `**/README.md` under `apps/`, `services/`, `docs/`, `packages/`) still require the headers.
+
 ## Rules
 
 - Place these two fields on the lines directly under the H1, before any other content
@@ -22,7 +31,7 @@ Every project Markdown document must include status metadata immediately under t
 - **Last updated**: ISO date `YYYY-MM-DD` (use today's date when creating or meaningfully revising)
 - When editing an existing doc, bump **Last updated** if the content change is substantive
 - Do not invent other header fields unless the doc type already defines them
-- README indexes and short stubs follow the same convention
+- Nested package/service README stubs still follow the header convention; root `README.md` and `run_locally.md` do not
 
 ## Example
 

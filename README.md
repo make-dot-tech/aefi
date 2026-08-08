@@ -1,8 +1,5 @@
 # aefi
 
-**Status**: Draft
-**Last updated**: 2026-08-08
-
 Evidence and financial-intelligence layer for agent commerce.
 
 ## Monorepo
@@ -29,45 +26,19 @@ docs/              Spec + Arc learning notes
 
 ## Quick start
 
+Full local walkthrough: **[run_locally.md](./run_locally.md)**.
+
 ```bash
 cp .env.example .env
 docker compose up -d postgres
-pnpm install
-pnpm --filter @aefi/api dev
-# → http://localhost:8787/health
-```
-
-Hackathon demo UI (provider search flagship; fixtures work without Neo4j):
-
-```bash
-pnpm --filter @aefi/studio dev
-# → http://localhost:5173
-
-# live graph mode
 docker compose --profile graph up -d neo4j
+pnpm install
 pnpm --filter @aefi/api seed:demo
 pnpm --filter @aefi/api dev
-```
+# → http://localhost:8787/health
 
-Brand landing:
-
-```bash
-pnpm --filter @aefi/www dev
-# → http://localhost:5174
-```
-
-Indexer (needs Postgres up):
-
-```bash
-cd services/indexer
-export INDEXER_ABI_DIR=$PWD/abi/5042002
-go run ./cmd/indexer
-```
-
-Optional Neo4j (for live studio mode + matcher):
-
-```bash
-docker compose --profile graph up -d neo4j
+pnpm --filter @aefi/studio dev
+# → http://localhost:5173
 ```
 
 ## Delivery sequence
