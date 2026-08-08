@@ -6,6 +6,10 @@
     "build": "pnpm -r run build",
     "dev:api": "pnpm --filter @aefi/api dev",
     "dev:matcher": "pnpm --filter @aefi/matcher dev",
+    "dev:studio": "pnpm --filter @aefi/studio dev",
+    "dev:www": "pnpm --filter @aefi/www dev",
+    "build:studio": "pnpm --filter @aefi/studio build",
+    "build:www": "pnpm --filter @aefi/www build",
     "typecheck": "pnpm -r run typecheck"
   },
   "engines": {

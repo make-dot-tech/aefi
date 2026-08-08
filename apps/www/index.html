@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>aefi — evidence for agent commerce</title>
+    <meta
+      name="description"
+      content="aefi is the evidence and financial-intelligence layer for agent commerce on Arc."
+    />
+    <link rel="icon" type="image/png" href="/brand/aefi-icon.png" />
+    <link rel="apple-touch-icon" href="/brand/aefi-icon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <div class="atmosphere" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <main class="hero">
+      <h1 class="brand">
+        <img
+          class="brand-logo"
+          src="/brand/aefi-logo.png"
+          alt="aefi"
+          width="144"
+          height="144"
+        />
+      </h1>
+      <p class="tagline">Evidence for agent commerce on Arc.</p>
+      <p class="status">Product coming soon.</p>
+      <p class="demo-link">
+        <a href="https://demo.aefi.io">Arc hackathon demo →</a>
+      </p>
+    </main>
+    <script>
+      (function () {
+        var host = location.hostname;
+        if (host === "localhost" || host === "127.0.0.1") {
+          var a = document.querySelector(".demo-link a");
+          if (a) a.setAttribute("href", "http://localhost:5173");
+        }
+      })();
+    </script>
+  </body>
+</html>

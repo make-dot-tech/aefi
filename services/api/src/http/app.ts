@@ -1,11 +1,60 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { DEMO_EXAMPLES } from "../demo/examples.js";
 import * as caps from "../handlers/capabilities.js";
 import { getDriver } from "../graph/queries.js";
 import { loadX402Config, x402Gate } from "../x402/gate.js";
 
+const DEFAULT_CORS_ORIGINS = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:5174",
+  "https://demo.aefi.io",
+  "https://hackathon.aefi.io",
+  "https://aefi.io",
+  "https://www.aefi.io",
+];
+
+function corsOrigins(): string[] {
+  const extra = (process.env.AEFI_CORS_ORIGINS ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return [...new Set([...DEFAULT_CORS_ORIGINS, ...extra])];
+}
+
 export function createApp() {
   const app = new Hono();
   const x402 = loadX402Config();
+  const origins = corsOrigins();
+
+  app.use(
+    "*",
+    cors({
+      origin: (origin) => {
+        if (!origin) return origins[0]!;
+        if (origins.includes(origin)) return origin;
+        // Local Vite ports beyond the defaults
+        if (/^https?:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) {
+          return origin;
+        }
+        return null;
+      },
+      allowHeaders: [
+        "Content-Type",
+        "x-aefi-api-key",
+        "PAYMENT-SIGNATURE",
+        "PAYMENT-REQUIRED",
+      ],
+      exposeHeaders: [
+        "PAYMENT-REQUIRED",
+        "PAYMENT-RESPONSE",
+        "x-aefi-auth",
+      ],
+      allowMethods: ["GET", "POST", "OPTIONS"],
+    }),
+  );
 
   app.get("/health", async (c) => {
     let neo4j = "unknown";
@@ -24,6 +73,11 @@ export function createApp() {
   });
 
   app.use("/v1/*", async (c, next) => {
+    // Demo catalog is public (no x402) so the studio can list examples before auth.
+    if (c.req.path === "/v1/demo/examples") {
+      await next();
+      return;
+    }
     const gate = await x402Gate(c.req.path, c.req.raw.headers, x402);
     if (!gate.allowed) {
       if (gate.paymentRequiredHeader) {
@@ -43,6 +97,13 @@ export function createApp() {
       c.header("x-aefi-auth", "dev-open");
     }
     await next();
+  });
+
+  app.get("/v1/demo/examples", (c) => {
+    return c.json({
+      examples: DEMO_EXAMPLES,
+      note: "Fixture hashes are for studio demos; live Neo4j may not contain them.",
+    });
   });
 
   app.post("/v1/payments/verify", async (c) => {

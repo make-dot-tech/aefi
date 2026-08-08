@@ -28,6 +28,8 @@ Project conventions for agents working in this repo.
 
 | Path | Role |
 | --- | --- |
+| `apps/www` | Brand apex for aefi.io (coming soon) |
+| `apps/studio` | Hackathon Evidence Studio for demo.aefi.io |
 | `services/indexer` | Go — Arc allowlist ingest → Postgres |
 | `services/matcher` | TS — event correlators → Neo4j projection |
 | `services/rules` | Drools disposition (stub until #5) |

@@ -45,3 +45,8 @@ x402 gate (`AEFI_X402_ENABLED`):
 - Success responses include `PAYMENT-RESPONSE`
 
 Disposition: API posts FactPayload to `AEFI_RULES_URL` (`services/rules`); falls back to local TS composer if the rules service is down.
+
+## Demo / CORS
+
+- `GET /v1/demo/examples` — curated fixture hashes for Evidence Studio (no x402)
+- CORS allowlist includes local Vite ports, `https://demo.aefi.io`, `https://hackathon.aefi.io`, `https://aefi.io` (extend with `AEFI_CORS_ORIGINS`)
