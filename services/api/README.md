@@ -34,7 +34,23 @@ AEFI_MODE=mcp pnpm --filter @aefi/api start
 | `explain_transaction` | A | Steps from transfers/payments/memos/jobs |
 | `lookup_job` | A | ERC-8183 job + parties/outcomes/payments |
 | `get_agent_activity` | A | Partial: wallet payments + agent evidence/jobs |
-| `check_authority` / `trace_task` / `search_providers` | B/C | Honest gap envelopes |
+| `search_providers` | A | Graph-backed provider performance search + ranking |
+| `check_authority` / `trace_task` | B/C | Honest gap envelopes |
+
+Demo helpers:
+
+- `GET /v1/demo/scenarios` — curated provider-search scenarios  
+- `POST /v1/demo/seed` — load NovaFeed / PulseOracle / CheapTicks / HelixResearch into Neo4j  
+- `GET /v1/providers/:id` — single provider performance envelope  
+
+```bash
+docker compose --profile graph up -d neo4j
+pnpm --filter @aefi/api seed:demo
+# or re-embed only:
+pnpm --filter @aefi/api embed:providers
+```
+
+`search_providers` accepts optional `query` (natural-language semantic recall) fused with graph performance scores.
 
 x402 gate (`AEFI_X402_ENABLED`):
 
@@ -44,7 +60,7 @@ x402 gate (`AEFI_X402_ENABLED`):
 - Verify via facilitator (`AEFI_X402_FACILITATOR_URL`) or `AEFI_X402_DEV_ACCEPT=true` structural accept  
 - Success responses include `PAYMENT-RESPONSE`
 
-Disposition: API posts FactPayload to `AEFI_RULES_URL` (`services/rules`); falls back to local TS composer if the rules service is down.
+Disposition: API posts FactPayload to `AEFI_RULES_URL` (`services/rules`); falls back to local TS composer if the rules service is down. For local demo without Drools, set `AEFI_RULES_ENABLED=false` so the API does not attempt `:8090`.
 
 ## Demo / CORS
 

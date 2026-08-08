@@ -64,8 +64,25 @@ const tools = [
   },
   {
     name: "search_providers",
-    description: "Search providers by structured filters.",
-    inputSchema: { type: "object", additionalProperties: true },
+    description:
+      "Search providers by natural-language intent (semantic) and/or structured performance filters. Returns evidence-backed rankings fused with graph metrics.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: {
+          type: "string",
+          description: "Natural-language capability intent (semantic recall)",
+        },
+        capability: { type: "string" },
+        minimum_verified_jobs: { type: "number" },
+        minimum_completion_rate: { type: "number" },
+        minimum_confidence: {
+          type: "string",
+          enum: ["high", "medium", "low", "unverified"],
+        },
+        limit: { type: "number" },
+      },
+    },
   },
 ] as const;
 
@@ -107,7 +124,7 @@ export function createMcpServer() {
         result = caps.traceTask(String(args.task_execution_id ?? ""));
         break;
       case "search_providers":
-        result = caps.searchProviders(args);
+        result = await caps.searchProviders(args);
         break;
       default:
         throw new Error(`Unknown tool: ${name}`);

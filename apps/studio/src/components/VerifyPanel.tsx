@@ -1,4 +1,5 @@
 import type { AefiEnvelope, VerifyResult } from "../lib/types";
+import { Spinner } from "./Spinner";
 
 interface Props {
   envelope: AefiEnvelope<VerifyResult> | null;
@@ -23,7 +24,7 @@ export function VerifyPanel({ envelope, loading, onVerify }: Props) {
           onClick={onVerify}
           disabled={loading}
         >
-          {loading ? "Verifying…" : "Verify"}
+          {loading ? <Spinner size="sm" label="Verifying" /> : "Verify"}
         </button>
       </div>
       {envelope ? (
@@ -36,7 +37,9 @@ export function VerifyPanel({ envelope, loading, onVerify }: Props) {
           <p className="verify-summary">{envelope.summary}</p>
           {envelope.result?.payments?.map((p) => (
             <div key={p.payment_id} className="verify-row">
-              <span>{p.amount} {p.asset}</span>
+              <span>
+                {p.amount} {p.asset}
+              </span>
               <span className="mono">
                 {short(p.from)} → {short(p.to)}
               </span>

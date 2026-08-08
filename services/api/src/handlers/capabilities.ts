@@ -13,6 +13,12 @@ import {
   findPaymentsByTx,
   type PaymentView,
 } from "../graph/queries.js";
+import {
+  countProviders,
+  getProviderPerformance,
+  searchProviderPerformance,
+  type ProviderSearchFilters,
+} from "../graph/providers.js";
 
 function evidenceRefs(rows: Array<Record<string, unknown>>): EvidenceRef[] {
   return rows.map((e) => ({
@@ -408,10 +414,230 @@ export function traceTask(taskExecutionId: string): AefiEnvelope {
   );
 }
 
-export function searchProviders(_body: unknown): AefiEnvelope {
-  return gapEnvelope(
-    "Provider search is registered but reputation/job history graph is empty.",
-    ["provider_performance_graph_empty"],
-    ["insufficient_evidence"],
-  );
+function parseSearchFilters(body: unknown): ProviderSearchFilters {
+  const b = (body ?? {}) as Record<string, unknown>;
+  const conf = b.minimum_confidence;
+  return {
+    query: typeof b.query === "string" ? b.query : undefined,
+    capability: typeof b.capability === "string" ? b.capability : undefined,
+    minimum_verified_jobs:
+      typeof b.minimum_verified_jobs === "number"
+        ? b.minimum_verified_jobs
+        : typeof b.minimum_verified_jobs === "string"
+          ? Number(b.minimum_verified_jobs)
+          : undefined,
+    minimum_completion_rate:
+      typeof b.minimum_completion_rate === "number"
+        ? b.minimum_completion_rate
+        : typeof b.minimum_completion_rate === "string"
+          ? Number(b.minimum_completion_rate)
+          : undefined,
+    minimum_confidence:
+      conf === "high" || conf === "medium" || conf === "low" || conf === "unverified"
+        ? conf
+        : undefined,
+    limit: typeof b.limit === "number" ? b.limit : undefined,
+    semantic_top_k:
+      typeof b.semantic_top_k === "number" ? b.semantic_top_k : undefined,
+  };
+}
+
+export async function searchProviders(body: unknown = {}): Promise<AefiEnvelope> {
+  const filters = parseSearchFilters(body);
+  let providers;
+  try {
+    providers = await searchProviderPerformance(filters);
+  } catch {
+    return gapEnvelope(
+      "Provider search unavailable — Neo4j evidence graph is unreachable.",
+      ["neo4j_unavailable", "provider_performance_graph_empty"],
+      ["insufficient_evidence"],
+    );
+  }
+
+  const total = await countProviders().catch(() => 0);
+  if (providers.length === 0) {
+    return envelopeFromDisposition(
+      total === 0
+        ? "No provider job history in the evidence graph yet. Seed demo providers or index ERC-8183 activity."
+        : "No providers matched the structured filters.",
+      {
+        interpreted_filters: filters,
+        results: [],
+        graph_provider_count: total,
+      },
+      await composeDisposition({
+        schema_version: "0.1.0",
+        subject: { type: "provider", id: "search" },
+        facts: [],
+        evidence_types: [],
+        coverage: {
+          status: "unknown",
+          known_gaps:
+            total === 0
+              ? ["provider_performance_graph_empty"]
+              : ["no_providers_matched_filters"],
+        },
+      }),
+      {
+        status: "unknown",
+        known_gaps:
+          total === 0
+            ? ["provider_performance_graph_empty"]
+            : ["no_providers_matched_filters"],
+      },
+    );
+  }
+
+  const top = providers[0]!;
+  const facts: Fact[] = [
+    {
+      code: "provider_performance_aggregated",
+      present: true,
+      strength: "strong",
+      refs: providers.map((p) => p.provider_id),
+    },
+    {
+      code: "job_outcome_history_observed",
+      present: providers.some((p) => p.performance.verified_jobs > 0),
+      strength: "exact",
+      refs: providers.map((p) => p.provider_id),
+    },
+    {
+      code: "capability_semantic_match",
+      present: providers.some(
+        (p) => (p.semantic_similarity ?? 0) >= 0.35,
+      ),
+      strength: "medium",
+      refs: providers
+        .filter((p) => (p.semantic_similarity ?? 0) >= 0.35)
+        .map((p) => p.provider_id),
+    },
+  ];
+
+  const disposition = await composeDisposition({
+    schema_version: "0.1.0",
+    subject: { type: "provider", id: "search" },
+    facts,
+    evidence_types: ["job_event", "transfer", "reputation_event"],
+    coverage: {
+      status: "partial",
+      known_gaps: ["authorization_evidence_missing"],
+    },
+  });
+
+  const queryBit = filters.query
+    ? ` Intent: “${filters.query}”.`
+    : "";
+
+  return {
+    ...envelopeFromDisposition(
+      `Found ${providers.length} provider(s). Top match: ${top.display_name ?? top.provider_id} (${(top.performance.completion_rate * 100).toFixed(1)}% completion across ${top.performance.verified_jobs} jobs).${queryBit}`,
+      {
+        interpreted_filters: {
+          ...filters,
+          semantic_top_k: filters.semantic_top_k ?? (filters.query ? 25 : undefined),
+        },
+        results: providers.map((p) => ({
+          provider_id: p.provider_id,
+          display_name: p.display_name,
+          wallet: p.wallet,
+          capabilities: p.capabilities,
+          performance: p.performance,
+          ranking_explanation: p.ranking_explanation,
+          score: p.score,
+          graph_score: p.graph_score,
+          semantic_similarity: p.semantic_similarity,
+          sample_jobs: p.sample_jobs,
+          sample_settlements: p.sample_settlements,
+          authorization_compatibility: {
+            service_allowed: null,
+            estimated_price_within_limit: null,
+            note: "Mandate/task adapters not wired — authorization_evidence_missing.",
+          },
+        })),
+        graph_provider_count: total,
+      },
+      disposition,
+      {
+        status: "partial",
+        known_gaps: ["authorization_evidence_missing"],
+      },
+      providers.flatMap((p) =>
+        p.sample_settlements.slice(0, 1).map((s) => ({
+          evidence_id: `ev:search:${p.provider_id}`,
+          type: "provider_performance",
+          source: "neo4j",
+          reference: s.tx_hash || p.provider_id,
+          supports: [p.provider_id],
+        })),
+      ),
+    ),
+    graph_refs: { node_ids: providers.map((p) => p.provider_id) },
+  };
+}
+
+export async function getProvider(providerId: string): Promise<AefiEnvelope> {
+  let view;
+  try {
+    view = await getProviderPerformance(providerId);
+  } catch {
+    return gapEnvelope(
+      `Provider ${providerId} unavailable — Neo4j unreachable.`,
+      ["neo4j_unavailable"],
+      ["insufficient_evidence"],
+    );
+  }
+
+  if (!view) {
+    return envelopeFromDisposition(
+      `No provider performance found for ${providerId}.`,
+      { provider_id: providerId, found: false },
+      await composeDisposition({
+        schema_version: "0.1.0",
+        subject: { type: "provider", id: providerId },
+        facts: [],
+        evidence_types: [],
+        coverage: { status: "unknown", known_gaps: ["provider_not_in_graph"] },
+      }),
+      { status: "unknown", known_gaps: ["provider_not_in_graph"] },
+    );
+  }
+
+  const disposition = await composeDisposition({
+    schema_version: "0.1.0",
+    subject: { type: "provider", id: view.provider_id },
+    facts: [
+      {
+        code: "provider_performance_aggregated",
+        present: true,
+        strength: "strong",
+        refs: [view.provider_id],
+      },
+      {
+        code: "job_outcome_history_observed",
+        present: view.performance.verified_jobs > 0,
+        strength: "exact",
+        refs: [view.provider_id],
+      },
+    ],
+    evidence_types: ["job_event", "transfer", "reputation_event"],
+    coverage: {
+      status: "partial",
+      known_gaps: ["authorization_evidence_missing"],
+    },
+  });
+
+  return {
+    ...envelopeFromDisposition(
+      `${view.display_name ?? view.provider_id}: ${view.performance.verified_jobs} verified jobs, ${(view.performance.completion_rate * 100).toFixed(1)}% completion, confidence ${view.performance.confidence}.`,
+      { found: true, ...view },
+      disposition,
+      {
+        status: "partial",
+        known_gaps: ["authorization_evidence_missing"],
+      },
+    ),
+    graph_refs: { node_ids: [view.provider_id] },
+  };
 }

@@ -6,6 +6,8 @@ import {
 
 const DEFAULT_RULES_URL = "http://localhost:8090";
 
+let rulesFallbackLogged = false;
+
 export async function composeDisposition(
   payload: FactPayload,
 ): Promise<DispositionResult> {
@@ -25,18 +27,28 @@ export async function composeDisposition(
           coverage: payload.coverage,
           context: (payload as FactPayload & { context?: unknown }).context,
         }),
-        signal: AbortSignal.timeout(Number(process.env.AEFI_RULES_TIMEOUT_MS ?? 3000)),
+        signal: AbortSignal.timeout(
+          Number(process.env.AEFI_RULES_TIMEOUT_MS ?? 3000),
+        ),
       });
       if (res.ok) {
         const body = (await res.json()) as DispositionResult;
         if (body.confidence && body.confidence_model_version) {
           return body;
         }
-      } else {
-        console.warn("aefi-rules non-OK", res.status);
+      } else if (!rulesFallbackLogged) {
+        rulesFallbackLogged = true;
+        console.warn(
+          `aefi-rules non-OK (${res.status}); using local composer (further warnings suppressed)`,
+        );
       }
-    } catch (err) {
-      console.warn("aefi-rules unavailable, using local composer", err);
+    } catch {
+      if (!rulesFallbackLogged) {
+        rulesFallbackLogged = true;
+        console.warn(
+          `aefi-rules unavailable at ${base}; using local composer (set AEFI_RULES_ENABLED=false to silence)`,
+        );
+      }
     }
   }
 

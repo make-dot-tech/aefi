@@ -37,11 +37,16 @@ pnpm --filter @aefi/api dev
 # → http://localhost:8787/health
 ```
 
-Hackathon demo UI (fixtures work without Neo4j):
+Hackathon demo UI (provider search flagship; fixtures work without Neo4j):
 
 ```bash
 pnpm --filter @aefi/studio dev
 # → http://localhost:5173
+
+# live graph mode
+docker compose --profile graph up -d neo4j
+pnpm --filter @aefi/api seed:demo
+pnpm --filter @aefi/api dev
 ```
 
 Brand landing:

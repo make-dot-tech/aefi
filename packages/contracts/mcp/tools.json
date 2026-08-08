@@ -40,8 +40,8 @@
     },
     {
       "name": "search_providers",
-      "description": "Search providers by structured performance filters. Limited until graph history accumulates.",
-      "wave": "C",
+      "description": "Search providers by natural-language intent (semantic) and/or structured performance filters. Returns evidence-backed rankings fused with graph metrics.",
+      "wave": "A",
       "http": "POST /v1/providers/search"
     }
   ]
