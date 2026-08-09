@@ -65,6 +65,30 @@ export function correlateErc8183(rows: Erc8183Row[]): ProjectionBatch {
       }
     }
 
+    if (row.event_kind === "PaymentReleased") {
+      const payId = ids.payment(row.chain_id, row.tx_hash, row.log_index);
+      batch.nodes.push({
+        label: "Payment",
+        id: payId,
+        props: {
+          chain_id: row.chain_id,
+          tx_hash: row.tx_hash,
+          log_index: row.log_index,
+          amount: payload.amount != null ? String(payload.amount) : null,
+          asset: "USDC",
+          status: "released",
+          source: "erc8183",
+        },
+      });
+      batch.edges.push({ type: "FOR_JOB", from: payId, to: jobNodeId });
+      batch.facts.push({
+        code: "escrow_payment_released",
+        present: true,
+        strength: "exact",
+        refs: [payId, jobNodeId],
+      });
+    }
+
     batch.nodes.push({
       label: "Evidence",
       id: ids.evidence(row.id),

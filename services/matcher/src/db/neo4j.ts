@@ -1,4 +1,4 @@
-import neo4j, { type Driver, type Session } from "neo4j-driver";
+import neo4j, { type Driver } from "neo4j-driver";
 import type { GraphEdge, GraphNode, ProjectionBatch } from "../types.js";
 
 const CONSTRAINTS = [
@@ -11,6 +11,8 @@ const CONSTRAINTS = [
   "CREATE CONSTRAINT evidence_id IF NOT EXISTS FOR (n:Evidence) REQUIRE n.id IS UNIQUE",
   "CREATE CONSTRAINT outcome_id IF NOT EXISTS FOR (n:Outcome) REQUIRE n.id IS UNIQUE",
 ];
+
+const WRITE_CHUNK = 200;
 
 export class GraphStore {
   readonly driver: Driver;
@@ -43,11 +45,54 @@ export class GraphStore {
     const session = this.driver.session();
     try {
       await session.executeWrite(async (tx) => {
+        const byLabel = new Map<string, GraphNode[]>();
         for (const node of batch.nodes) {
-          await mergeNode(tx, node);
+          const list = byLabel.get(node.label) ?? [];
+          list.push(node);
+          byLabel.set(node.label, list);
         }
+        for (const [label, nodes] of byLabel) {
+          for (const chunk of chunked(nodes, WRITE_CHUNK)) {
+            await tx.run(
+              `
+              UNWIND $rows AS row
+              MERGE (n:${label} {id: row.id})
+              SET n += row.props
+              `,
+              {
+                rows: chunk.map((n) => ({
+                  id: n.id,
+                  props: { id: n.id, ...(n.props ?? {}) },
+                })),
+              },
+            );
+          }
+        }
+
+        const byType = new Map<string, GraphEdge[]>();
         for (const edge of batch.edges) {
-          await mergeEdge(tx, edge);
+          const list = byType.get(edge.type) ?? [];
+          list.push(edge);
+          byType.set(edge.type, list);
+        }
+        for (const [type, edges] of byType) {
+          for (const chunk of chunked(edges, WRITE_CHUNK)) {
+            await tx.run(
+              `
+              UNWIND $rows AS row
+              MATCH (a {id: row.from}), (b {id: row.to})
+              MERGE (a)-[r:${type}]->(b)
+              SET r += row.props
+              `,
+              {
+                rows: chunk.map((e) => ({
+                  from: e.from,
+                  to: e.to,
+                  props: e.props ?? {},
+                })),
+              },
+            );
+          }
         }
       });
     } finally {
@@ -56,25 +101,10 @@ export class GraphStore {
   }
 }
 
-async function mergeNode(
-  tx: { run: Session["run"] },
-  node: GraphNode,
-): Promise<void> {
-  const props = { id: node.id, ...(node.props ?? {}) };
-  // Label is controlled by our correlators, not user input.
-  const cypher = `MERGE (n:${node.label} {id: $id}) SET n += $props`;
-  await tx.run(cypher, { id: node.id, props });
-}
-
-async function mergeEdge(
-  tx: { run: Session["run"] },
-  edge: GraphEdge,
-): Promise<void> {
-  const props = edge.props ?? {};
-  const cypher = `
-    MATCH (a {id: $from}), (b {id: $to})
-    MERGE (a)-[r:${edge.type}]->(b)
-    SET r += $props
-  `;
-  await tx.run(cypher, { from: edge.from, to: edge.to, props });
+function chunked<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    out.push(items.slice(i, i + size));
+  }
+  return out;
 }

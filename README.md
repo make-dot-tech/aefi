@@ -69,7 +69,8 @@ cp .env.example .env
 docker compose up -d postgres
 docker compose --profile graph up -d neo4j
 pnpm install
-pnpm --filter @aefi/api seed:demo
+# run indexer + matcher against Arc (or use existing projected graph)
+pnpm --filter @aefi/api embed:providers   # optional NL recall
 pnpm --filter @aefi/api dev
 # → http://localhost:8787/health
 

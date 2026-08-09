@@ -1,7 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { DEMO_EXAMPLES } from "../demo/examples.js";
-import { DEMO_SCENARIOS, seedDemoProviders } from "../demo/seed.js";
+import { SEARCH_SCENARIOS } from "../scenarios.js";
 import * as caps from "../handlers/capabilities.js";
 import { getDriver } from "../graph/queries.js";
 import { loadX402Config, x402Gate } from "../x402/gate.js";
@@ -23,15 +22,6 @@ function corsOrigins(): string[] {
     .map((s) => s.trim())
     .filter(Boolean);
   return [...new Set([...DEFAULT_CORS_ORIGINS, ...extra])];
-}
-
-function demoSeedAllowed(
-  headers: Headers,
-  apiKey: string | null | undefined,
-): boolean {
-  if (process.env.AEFI_ALLOW_DEMO_SEED === "true") return true;
-  if (apiKey && headers.get("x-aefi-api-key") === apiKey) return true;
-  return process.env.NODE_ENV !== "production";
 }
 
 export function createApp() {
@@ -83,10 +73,7 @@ export function createApp() {
 
   app.use("/v1/*", async (c, next) => {
     const path = c.req.path;
-    if (
-      path === "/v1/demo/examples" ||
-      path === "/v1/demo/scenarios"
-    ) {
+    if (path === "/v1/scenarios") {
       await next();
       return;
     }
@@ -111,33 +98,8 @@ export function createApp() {
     await next();
   });
 
-  app.get("/v1/demo/examples", (c) => {
-    return c.json({
-      examples: DEMO_EXAMPLES,
-      note: "Fixture hashes are for studio demos; live Neo4j may not contain them.",
-    });
-  });
-
-  app.get("/v1/demo/scenarios", (c) => {
-    return c.json({ scenarios: DEMO_SCENARIOS });
-  });
-
-  app.post("/v1/demo/seed", async (c) => {
-    if (!demoSeedAllowed(c.req.raw.headers, x402.apiKey)) {
-      return c.json({ error: "demo seed disabled" }, 403);
-    }
-    try {
-      const result = await seedDemoProviders();
-      return c.json({ ok: true, ...result });
-    } catch (err) {
-      return c.json(
-        {
-          ok: false,
-          error: err instanceof Error ? err.message : "seed failed",
-        },
-        503,
-      );
-    }
+  app.get("/v1/scenarios", (c) => {
+    return c.json({ scenarios: SEARCH_SCENARIOS });
   });
 
   app.post("/v1/payments/verify", async (c) => {

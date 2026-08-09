@@ -9,7 +9,8 @@
     "start": "node dist/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "tsx --test src/**/*.test.ts",
-    "project:once": "tsx src/index.ts --once"
+    "project:once": "tsx src/index.ts --once",
+    "enrich:identity": "tsx src/enrich/identity-cli.ts"
   },
   "dependencies": {
     "neo4j-driver": "^6.2.0",

@@ -4,24 +4,49 @@ import {
   type Erc8004Row,
   type ProjectionBatch,
 } from "../types.js";
+import { parseAgentUri } from "./agentUri.js";
 
 export function correlateErc8004(rows: Erc8004Row[]): ProjectionBatch {
   const batch = emptyBatch();
+  const identityByAgent = new Map<
+    string,
+    ReturnType<typeof parseAgentUri>
+  >();
 
-  for (const row of rows) {
+  // Registered first so MetadataSet can copy identity onto wallet agents.
+  const ordered = [...rows].sort((a, b) => {
+    const rank = (k: string) => (k === "Registered" ? 0 : k === "MetadataSet" ? 1 : 2);
+    return rank(a.event_kind) - rank(b.event_kind);
+  });
+
+  for (const row of ordered) {
     if (!row.agent_id) continue;
     const agentId = ids.agent8004(row.chain_id, row.agent_id);
+    const props: Record<string, unknown> = {
+      chain_id: row.chain_id,
+      agent_id: row.agent_id,
+      registry: row.registry,
+      last_event: row.event_kind,
+      identity_source: "erc_8004",
+    };
+
+    if (row.event_kind === "Registered") {
+      const parsed = parseAgentUri(row.payload?.agentURI);
+      identityByAgent.set(row.agent_id, parsed);
+      if (parsed.display_name) props.display_name = parsed.display_name;
+      if (parsed.blurb) props.blurb = parsed.blurb;
+      if (parsed.capabilities.length) props.capabilities = parsed.capabilities;
+      if (parsed.capability_text) props.capability_text = parsed.capability_text;
+      if (parsed.role) props.role = parsed.role;
+      if (typeof row.payload?.agentURI === "string") {
+        props.agent_uri = row.payload.agentURI.slice(0, 500);
+      }
+    }
 
     batch.nodes.push({
       label: "Agent",
       id: agentId,
-      props: {
-        chain_id: row.chain_id,
-        agent_id: row.agent_id,
-        registry: row.registry,
-        last_event: row.event_kind,
-        identity_source: "erc_8004",
-      },
+      props,
     });
 
     batch.facts.push({
@@ -67,12 +92,41 @@ export function correlateErc8004(rows: Erc8004Row[]): ProjectionBatch {
     const wallet = extractAgentWallet(row);
     if (wallet) {
       const walletId = ids.wallet(row.chain_id, wallet);
+      const walletAgentId = ids.agentWallet(row.chain_id, wallet);
       batch.nodes.push({
         label: "Wallet",
         id: walletId,
         props: { chain_id: row.chain_id, address: wallet.toLowerCase() },
       });
       batch.edges.push({ type: "CONTROLS", from: agentId, to: walletId });
+
+      // Jobs PROVIDER → provisional wallet agents; copy identity so search surfaces names.
+      const parsed =
+        identityByAgent.get(row.agent_id) ?? parseAgentUri(undefined);
+      const walletAgentProps: Record<string, unknown> = {
+        chain_id: row.chain_id,
+        wallet: wallet.toLowerCase(),
+        provisional: true,
+        linked_erc8004: agentId,
+      };
+      if (parsed.display_name) walletAgentProps.display_name = parsed.display_name;
+      if (parsed.blurb) walletAgentProps.blurb = parsed.blurb;
+      if (parsed.capabilities.length) {
+        walletAgentProps.capabilities = parsed.capabilities;
+      }
+      if (parsed.capability_text) {
+        walletAgentProps.capability_text = parsed.capability_text;
+      }
+      batch.nodes.push({
+        label: "Agent",
+        id: walletAgentId,
+        props: walletAgentProps,
+      });
+      batch.edges.push({
+        type: "CONTROLS",
+        from: walletAgentId,
+        to: walletId,
+      });
     }
   }
 

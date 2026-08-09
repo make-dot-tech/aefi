@@ -139,5 +139,4 @@ export interface DemoExample {
   label: string;
   tx_hash: string;
   blurb: string;
-  fixture?: string;
 }

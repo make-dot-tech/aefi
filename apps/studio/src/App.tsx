@@ -12,11 +12,10 @@ import {
   fetchHealth,
   fetchScenarios,
   searchProviders,
-  seedDemo,
   verifyPayment,
   type DataMode,
 } from "./lib/api";
-import { DEMO_SCENARIOS } from "./fixtures/providers";
+import { SEARCH_SCENARIOS } from "./lib/scenarios";
 import type {
   AefiEnvelope,
   DemoScenario,
@@ -29,24 +28,22 @@ import type {
 
 export function App() {
   const toast = useToast();
-  const [scenarios, setScenarios] = useState<DemoScenario[]>(DEMO_SCENARIOS);
+  const [scenarios, setScenarios] = useState<DemoScenario[]>(SEARCH_SCENARIOS);
   const [activeScenario, setActiveScenario] = useState<string>(
-    DEMO_SCENARIOS[0]!.id,
+    SEARCH_SCENARIOS[0]!.id,
   );
   const [filters, setFilters] = useState<ProviderSearchFilters>(
-    DEMO_SCENARIOS[0]!.filters,
+    SEARCH_SCENARIOS[0]!.filters,
   );
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [liveOk, setLiveOk] = useState(false);
-  const [preferLive, setPreferLive] = useState(false);
-  const [mode, setMode] = useState<DataMode>("fixture");
+  const [mode, setMode] = useState<DataMode>("offline");
   const [search, setSearch] = useState<AefiEnvelope<ProviderSearchResult> | null>(
     null,
   );
   const [selected, setSelected] = useState<ProviderResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [booting, setBooting] = useState(true);
-  const [seedBusy, setSeedBusy] = useState(false);
   const [explainBusy, setExplainBusy] = useState(false);
 
   const [explain, setExplain] = useState<AefiEnvelope<ExplainResult> | null>(
@@ -69,16 +66,20 @@ export function App() {
         setScenarios(list);
         const canLive = health.reachable && health.neo4j === "ok";
         setLiveOk(canLive);
-        setPreferLive(canLive);
         toast.push(
           "info",
-          canLive ? "Live Neo4j connected" : "Using fixtures — API/graph offline",
+          canLive
+            ? "Connected to live evidence graph"
+            : "API/graph offline — live data unavailable",
         );
         const first = list[0];
-        if (first) {
+        if (first && canLive) {
           setActiveScenario(first.id);
           setFilters(first.filters);
-          await runSearch(first.filters, canLive, { silent: true });
+          await runSearch(first.filters, { silent: true });
+        } else if (first) {
+          setActiveScenario(first.id);
+          setFilters(first.filters);
         }
       } finally {
         if (!cancelled) setBooting(false);
@@ -92,14 +93,13 @@ export function App() {
 
   async function runSearch(
     next: ProviderSearchFilters,
-    live = preferLive,
     opts?: { silent?: boolean },
   ) {
     setBusy(true);
     setExplain(null);
     setVerify(null);
     try {
-      const { envelope, mode: m } = await searchProviders(next, live);
+      const { envelope, mode: m } = await searchProviders(next);
       setSearch(envelope);
       setMode(m);
       const top = envelope.result?.results?.[0] ?? null;
@@ -109,12 +109,13 @@ export function App() {
         toast.push(
           "success",
           n > 0
-            ? `Found ${n} provider${n === 1 ? "" : "s"} · ${m}`
+            ? `Found ${n} provider${n === 1 ? "" : "s"}`
             : "No providers matched filters",
         );
       }
     } catch (e) {
       setSearch(null);
+      setMode("offline");
       toast.push(
         "error",
         e instanceof Error ? e.message : "Search failed",
@@ -131,7 +132,7 @@ export function App() {
     setExplainBusy(true);
     toast.push("info", "Explaining settlement…");
     try {
-      const { envelope, mode: m } = await explainTransaction(tx, preferLive);
+      const { envelope, mode: m } = await explainTransaction(tx);
       setExplain(envelope);
       setMode(m);
       setStepIdx(0);
@@ -156,7 +157,7 @@ export function App() {
     if (!explainHash) return;
     setVerifyBusy(true);
     try {
-      const { envelope, mode: m } = await verifyPayment(explainHash, preferLive);
+      const { envelope, mode: m } = await verifyPayment(explainHash);
       setVerify(envelope);
       setMode(m);
       toast.push(
@@ -190,7 +191,7 @@ export function App() {
         <span className="top-meta">
           Evidence Studio · counterparty intelligence
           <span className={`mode-pill is-${mode}`}>{mode}</span>
-          {busy || seedBusy || explainBusy || verifyBusy ? (
+          {busy || explainBusy || verifyBusy ? (
             <Spinner size="sm" label="working" />
           ) : null}
         </span>
@@ -209,9 +210,17 @@ export function App() {
           </h1>
           <p className="tagline">
             A seeking agent describes what it needs in{" "}
-            <em>natural language</em> — aefi recalls providers semantically,
-            then re-ranks with job/outcome/settlement evidence.
+            <em>natural language</em> — aefi recalls providers from the live
+            Arc evidence graph, then re-ranks with job/outcome/settlement
+            evidence.
           </p>
+
+          {!liveOk && !booting ? (
+            <p className="muted offline-banner">
+              Live Neo4j is unavailable. Studio only shows real indexed data —
+              check the API / graph connection.
+            </p>
+          ) : null}
 
           <div className="scenarios" role="list">
             {scenarios.map((s) => (
@@ -220,7 +229,7 @@ export function App() {
                 type="button"
                 role="listitem"
                 className={`example ${activeScenario === s.id ? "is-active" : ""}`}
-                disabled={busy}
+                disabled={busy || !liveOk}
                 onClick={() => {
                   setActiveScenario(s.id);
                   setFilters(s.filters);
@@ -251,12 +260,16 @@ export function App() {
                 onChange={(e) =>
                   setFilters((f) => ({ ...f, query: e.target.value }))
                 }
-                placeholder="e.g. reliable on-chain price feeds for trading agents"
+                placeholder="e.g. CCTP cross-chain settlement on Arc"
                 spellCheck={false}
                 autoComplete="off"
-                disabled={busy}
+                disabled={busy || !liveOk}
               />
-              <button className="btn btn-primary" type="submit" disabled={busy}>
+              <button
+                className="btn btn-primary"
+                type="submit"
+                disabled={busy || !liveOk}
+              >
                 {busy ? (
                   <Spinner size="sm" label="Searching" />
                 ) : (
@@ -328,65 +341,23 @@ export function App() {
                   }
                 />
               </label>
-              <button className="btn btn-ghost" type="submit" disabled={busy}>
+              <button
+                className="btn btn-ghost"
+                type="submit"
+                disabled={busy || !liveOk}
+              >
                 Apply filters
               </button>
             </form>
           ) : null}
-
-          <div className="toolbar">
-            <label className="live-toggle">
-              <input
-                type="checkbox"
-                checked={preferLive}
-                disabled={!liveOk}
-                onChange={(e) => {
-                  setPreferLive(e.target.checked);
-                  toast.push(
-                    "info",
-                    e.target.checked
-                      ? "Live Neo4j preferred"
-                      : "Fixture mode preferred",
-                  );
-                }}
-              />
-              Live Neo4j
-              {!liveOk ? (
-                <span className="muted"> (API/graph offline)</span>
-              ) : null}
-            </label>
-            <button
-              type="button"
-              className="btn btn-ghost"
-              disabled={!liveOk || seedBusy || busy}
-              onClick={() => {
-                void (async () => {
-                  setSeedBusy(true);
-                  toast.push("info", "Seeding demo graph + embeddings…");
-                  const r = await seedDemo();
-                  setSeedBusy(false);
-                  if (r.ok) {
-                    toast.push("success", r.detail);
-                    setPreferLive(true);
-                    await runSearch(filters, true);
-                  } else {
-                    toast.push("error", r.detail);
-                  }
-                })();
-              }}
-            >
-              {seedBusy ? (
-                <Spinner size="sm" label="Seeding" />
-              ) : (
-                "Seed demo graph"
-              )}
-            </button>
-          </div>
         </section>
 
         {booting || busy ? (
           <div className="loading-panel" aria-busy="true">
-            <Spinner size="md" label={booting ? "Starting studio" : "Searching providers"} />
+            <Spinner
+              size="md"
+              label={booting ? "Starting studio" : "Searching providers"}
+            />
             <div className="skeleton-grid" aria-hidden="true">
               <div className="skeleton-card" />
               <div className="skeleton-card" />

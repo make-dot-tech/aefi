@@ -302,16 +302,35 @@ export async function searchProviderPerformance(
 
     const result = await session.run(
       `
-      MATCH (j:Job)-[:PROVIDER]->(a:Agent)
-      WHERE ($restrictIds IS NULL OR a.id IN $restrictIds)
-        AND (a.chain_id IS NULL OR toString(a.chain_id) = $chainId)
-        AND (j.chain_id IS NULL OR toString(j.chain_id) = $chainId)
+      MATCH (a:Agent)
+      WHERE (a.chain_id IS NULL OR toString(a.chain_id) = $chainId)
+        AND coalesce(a.demo, false) = false
+        AND NOT a.id STARTS WITH 'agent:demo:'
+        AND ($restrictIds IS NULL OR a.id IN $restrictIds)
+        AND (
+          a.id STARTS WITH 'agent:erc8004:'
+          OR coalesce(a.identity_source, '') = 'erc_8004'
+          OR EXISTS { MATCH (:Job)-[:PROVIDER]->(a) }
+        )
+        AND NOT (
+          a.id STARTS WITH 'agent:wallet:'
+          AND a.linked_erc8004 IS NOT NULL
+        )
+      OPTIONAL MATCH (a)-[:CONTROLS]->(aw:Wallet)
+      OPTIONAL MATCH (wa:Agent)-[:CONTROLS]->(aw)
+      WHERE wa.id STARTS WITH 'agent:wallet:'
+      OPTIONAL MATCH (j1:Job)-[:PROVIDER]->(wa)
+      WHERE j1.chain_id IS NULL OR toString(j1.chain_id) = $chainId
+      OPTIONAL MATCH (j2:Job)-[:PROVIDER]->(a)
+      WHERE j2.chain_id IS NULL OR toString(j2.chain_id) = $chainId
+      WITH a, aw,
+           [x IN collect(DISTINCT j1) + collect(DISTINCT j2) WHERE x IS NOT NULL] AS jobs
       OPTIONAL MATCH (j)-[:HAS_OUTCOME]->(o:Outcome)
+      WHERE j IN jobs
       OPTIONAL MATCH (pay:Payment)-[:FOR_JOB]->(j)
-      OPTIONAL MATCH (a)-[:CONTROLS]->(w:Wallet)
+      WHERE j IN jobs
       OPTIONAL MATCH (ev:Evidence)-[:SUPPORTS]->(a)
-      WITH a, head(collect(DISTINCT w)) AS w,
-           collect(DISTINCT j) AS jobs,
+      WITH a, aw AS w, jobs,
            [x IN collect(DISTINCT o) WHERE x IS NOT NULL] AS outcomes,
            [x IN collect(DISTINCT pay) WHERE x IS NOT NULL] AS payments,
            [x IN collect(DISTINCT ev) WHERE x IS NOT NULL] AS feedback
@@ -331,6 +350,9 @@ export async function searchProviderPerformance(
           OR toLower(coalesce(a.capability, '')) = $capability
           OR any(j IN jobs WHERE toLower(coalesce(j.capability, '')) = $capability)
           OR any(j IN jobs WHERE toLower(coalesce(j.description, '')) CONTAINS $capability)
+          OR toLower(coalesce(a.capability_text, '')) CONTAINS $capability
+          OR toLower(coalesce(a.blurb, '')) CONTAINS $capability
+          OR toLower(coalesce(a.display_name, '')) CONTAINS $capability
         )
       RETURN a, w, jobs, outcomes, payments, verified_jobs, completed_jobs,
              rejected_jobs, expired_jobs, payment_linked_jobs, feedback_events
@@ -380,18 +402,31 @@ export async function getProviderPerformance(
   try {
     const result = await session.run(
       `
-      MATCH (j:Job)-[:PROVIDER]->(a:Agent)
-      WHERE (toLower(a.id) = $key
-         OR toLower(coalesce(a.wallet, '')) = $key
-         OR toLower(coalesce(a.display_name, '')) = $key)
-        AND (a.chain_id IS NULL OR toString(a.chain_id) = $chainId)
-        AND (j.chain_id IS NULL OR toString(j.chain_id) = $chainId)
+      MATCH (a:Agent)
+      WHERE (a.chain_id IS NULL OR toString(a.chain_id) = $chainId)
+        AND coalesce(a.demo, false) = false
+        AND NOT a.id STARTS WITH 'agent:demo:'
+        AND (
+          toLower(a.id) = $key
+          OR toLower(coalesce(a.wallet, '')) = $key
+          OR toLower(coalesce(a.display_name, '')) = $key
+          OR toLower(coalesce(a.agent_id, '')) = $key
+        )
+      OPTIONAL MATCH (a)-[:CONTROLS]->(aw:Wallet)
+      OPTIONAL MATCH (wa:Agent)-[:CONTROLS]->(aw)
+      WHERE wa.id STARTS WITH 'agent:wallet:'
+      OPTIONAL MATCH (j1:Job)-[:PROVIDER]->(wa)
+      WHERE j1.chain_id IS NULL OR toString(j1.chain_id) = $chainId
+      OPTIONAL MATCH (j2:Job)-[:PROVIDER]->(a)
+      WHERE j2.chain_id IS NULL OR toString(j2.chain_id) = $chainId
+      WITH a, aw,
+           [x IN collect(DISTINCT j1) + collect(DISTINCT j2) WHERE x IS NOT NULL] AS jobs
       OPTIONAL MATCH (j)-[:HAS_OUTCOME]->(o:Outcome)
+      WHERE j IN jobs
       OPTIONAL MATCH (pay:Payment)-[:FOR_JOB]->(j)
-      OPTIONAL MATCH (a)-[:CONTROLS]->(w:Wallet)
+      WHERE j IN jobs
       OPTIONAL MATCH (ev:Evidence)-[:SUPPORTS]->(a)
-      WITH a, head(collect(DISTINCT w)) AS w,
-           collect(DISTINCT j) AS jobs,
+      WITH a, aw AS w, jobs,
            [x IN collect(DISTINCT o) WHERE x IS NOT NULL] AS outcomes,
            [x IN collect(DISTINCT pay) WHERE x IS NOT NULL] AS payments,
            [x IN collect(DISTINCT ev) WHERE x IS NOT NULL] AS feedback
@@ -421,9 +456,19 @@ export async function countProviders(): Promise<number> {
   const session = getDriver().session();
   try {
     const res = await session.run(
-      `MATCH (j:Job)-[:PROVIDER]->(a:Agent)
+      `MATCH (a:Agent)
        WHERE (a.chain_id IS NULL OR toString(a.chain_id) = $chainId)
-         AND (j.chain_id IS NULL OR toString(j.chain_id) = $chainId)
+         AND coalesce(a.demo, false) = false
+         AND NOT a.id STARTS WITH 'agent:demo:'
+         AND NOT (
+           a.id STARTS WITH 'agent:wallet:'
+           AND a.linked_erc8004 IS NOT NULL
+         )
+         AND (
+           a.id STARTS WITH 'agent:erc8004:'
+           OR coalesce(a.identity_source, '') = 'erc_8004'
+           OR EXISTS { MATCH (:Job)-[:PROVIDER]->(a) }
+         )
        RETURN count(DISTINCT a) AS n`,
       { chainId: chainId() },
     );

@@ -37,20 +37,17 @@ AEFI_MODE=mcp pnpm --filter @aefi/api start
 | `search_providers` | A | Graph-backed provider performance search + ranking |
 | `check_authority` / `trace_task` | B/C | Honest gap envelopes |
 
-Demo helpers:
+Also:
 
-- `GET /v1/demo/scenarios` — curated provider-search scenarios  
-- `POST /v1/demo/seed` — load NovaFeed / PulseOracle / CheapTicks / HelixResearch into Neo4j  
+- `GET /v1/scenarios` — curated NL search presets for Evidence Studio  
 - `GET /v1/providers/:id` — single provider performance envelope  
 
 ```bash
-docker compose --profile graph up -d neo4j
-pnpm --filter @aefi/api seed:demo
-# or re-embed only:
+# Re-embed agent capability text for semantic recall (after matcher enrichment):
 pnpm --filter @aefi/api embed:providers
 ```
 
-`search_providers` accepts optional `query` (natural-language semantic recall) fused with graph performance scores.
+`search_providers` accepts optional `query` (natural-language semantic recall) fused with graph performance scores. Provider rows resolve ERC-8004 identity onto job providers via shared wallets.
 
 x402 gate (`AEFI_X402_ENABLED`):
 
@@ -60,9 +57,8 @@ x402 gate (`AEFI_X402_ENABLED`):
 - Verify via facilitator (`AEFI_X402_FACILITATOR_URL`) or `AEFI_X402_DEV_ACCEPT=true` structural accept  
 - Success responses include `PAYMENT-RESPONSE`
 
-Disposition: API posts FactPayload to `AEFI_RULES_URL` (`services/rules`); falls back to local TS composer if the rules service is down. For local demo without Drools, set `AEFI_RULES_ENABLED=false` so the API does not attempt `:8090`.
+Disposition: API posts FactPayload to `AEFI_RULES_URL` (`services/rules`); falls back to local TS composer if the rules service is down. For local use without Drools, set `AEFI_RULES_ENABLED=false` so the API does not attempt `:8090`.
 
-## Demo / CORS
+## CORS
 
-- `GET /v1/demo/examples` — curated fixture hashes for Evidence Studio (no x402)
-- CORS allowlist includes local Vite ports, `https://demo.aefi.io`, `https://hackathon.aefi.io`, `https://aefi.io` (extend with `AEFI_CORS_ORIGINS`)
+CORS allowlist includes local Vite ports, `https://demo.aefi.io`, `https://hackathon.aefi.io`, `https://aefi.io` (extend with `AEFI_CORS_ORIGINS`).

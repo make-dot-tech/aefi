@@ -14,7 +14,7 @@ export function ProviderCards({ providers, selectedId, onSelect }: Props) {
   if (providers.length === 0) {
     return (
       <p className="muted">
-        No providers matched. Loosen filters or seed the demo graph.
+        No providers matched. Loosen filters or wait for more matcher projection.
       </p>
     );
   }

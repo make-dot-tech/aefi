@@ -213,7 +213,7 @@ steps:
           --min-instances=0 \
           --max-instances=5 \
           --timeout=300 \
-          --set-env-vars=NODE_ENV=production,ARC_CHAIN_ID=${_CHAIN_ID},AEFI_RULES_ENABLED=true,AEFI_RULES_URL=$${RULES_URL},AEFI_RULES_TIMEOUT_MS=8000,AEFI_X402_ENABLED=false,AEFI_ALLOW_DEMO_SEED=true,AEFI_RESOURCE_BASE_URL=https://api.aefi.io \
+          --set-env-vars=NODE_ENV=production,ARC_CHAIN_ID=${_CHAIN_ID},AEFI_RULES_ENABLED=true,AEFI_RULES_URL=$${RULES_URL},AEFI_RULES_TIMEOUT_MS=8000,AEFI_X402_ENABLED=false,AEFI_RESOURCE_BASE_URL=https://api.aefi.io \
           --update-secrets=NEO4J_URI=AEFI-NEO4J-URI:latest,NEO4J_USER=AEFI-NEO4J-USER:latest,NEO4J_PASSWORD=AEFI-NEO4J-PASSWORD:latest,AEFI_API_KEY=AEFI-API-KEY:latest
         gcloud run services add-iam-policy-binding aefi-api \
           --region=${_REGION} --member=allUsers --role=roles/run.invoker --quiet
@@ -311,7 +311,7 @@ steps:
       - --vpc-connector=${_VPC_CONNECTOR}
       - --vpc-egress=private-ranges-only
       - --add-cloudsql-instances=${_SQL_INSTANCE}
-      - --set-env-vars=ARC_CHAIN_ID=${_CHAIN_ID},NODE_ENV=production
+      - --set-env-vars=ARC_CHAIN_ID=${_CHAIN_ID},NODE_ENV=production,MATCHER_BATCH_SIZE=2000,MATCHER_POLL_MS=500
       - --update-secrets=DATABASE_URL=AEFI-DATABASE-URL:latest,NEO4J_URI=AEFI-NEO4J-URI:latest,NEO4J_USER=AEFI-NEO4J-USER:latest,NEO4J_PASSWORD=AEFI-NEO4J-PASSWORD:latest
     waitFor: [run-migrate, push-matcher]
 

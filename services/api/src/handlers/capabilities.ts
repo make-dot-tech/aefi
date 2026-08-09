@@ -459,7 +459,7 @@ export async function searchProviders(body: unknown = {}): Promise<AefiEnvelope>
   if (providers.length === 0) {
     return envelopeFromDisposition(
       total === 0
-        ? "No provider job history in the evidence graph yet. Seed demo providers or index ERC-8183 activity."
+        ? "No provider job history in the evidence graph yet. Wait for the matcher to project ERC-8183 activity from Postgres."
         : "No providers matched the structured filters.",
       {
         interpreted_filters: filters,
