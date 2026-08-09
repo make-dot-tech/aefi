@@ -1,3 +1,4 @@
+import { useEffect, useId, useRef } from "react";
 import type { ProviderResult } from "../lib/types";
 import { Spinner } from "./Spinner";
 
@@ -20,108 +21,151 @@ export function ProviderDetail({
 }: Props) {
   const p = provider.performance;
   const settlement = provider.sample_settlements[0];
+  const titleId = useId();
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
+
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
 
   return (
-    <aside className="provider-detail" aria-label="Provider detail">
-      <div className="drawer-head">
-        <h2>{provider.display_name ?? provider.provider_id}</h2>
-        <button type="button" className="drawer-close" onClick={onClose}>
-          close
-        </button>
-      </div>
-
-      <p className="provider-id mono">{provider.provider_id}</p>
-      {provider.wallet ? (
-        <p className="mono muted">{provider.wallet}</p>
-      ) : null}
-
-      <div className="detail-stats">
-        <div>
-          <span className="metric-label">completion</span>
-          <span className="metric-value">{pct(p.completion_rate)}</span>
-        </div>
-        <div>
-          <span className="metric-label">verified jobs</span>
-          <span className="metric-value">{p.verified_jobs}</span>
-        </div>
-        <div>
-          <span className="metric-label">completed</span>
-          <span className="metric-value">{p.completed_jobs}</span>
-        </div>
-        <div>
-          <span className="metric-label">rejected</span>
-          <span className="metric-value">{p.rejected_jobs}</span>
-        </div>
-        <div>
-          <span className="metric-label">payment-linked</span>
-          <span className="metric-value">{p.payment_linked_jobs}</span>
-        </div>
-        <div>
-          <span className="metric-label">8004 feedback</span>
-          <span className="metric-value">{p.feedback_events}</span>
-        </div>
-      </div>
-
-      <h3 className="drawer-sub">Evidence distribution</h3>
-      <div className="dist-bars" aria-label="Evidence distribution">
-        {(["high", "medium", "low"] as const).map((k) => (
-          <div key={k} className="dist-row">
-            <span>{k}</span>
-            <div className="score-track">
-              <div
-                className={`score-fill is-${k}`}
-                style={{
-                  width: `${Math.min(100, (p.evidence_distribution[k] / Math.max(p.verified_jobs, 1)) * 100)}%`,
-                }}
-              />
-            </div>
-            <span>{p.evidence_distribution[k]}</span>
-          </div>
-        ))}
-      </div>
-
-      <h3 className="drawer-sub">Ranking reasons</h3>
-      <div className="chip-row">
-        {provider.ranking_explanation.map((r) => (
-          <span key={r} className="chip chip-reason">
-            {r}
-          </span>
-        ))}
-      </div>
-
-      <h3 className="drawer-sub">Recent jobs</h3>
-      <ul className="job-list">
-        {provider.sample_jobs.map((j) => (
-          <li key={j.job_id}>
-            <span>{j.job_id}</span>
-            <span className="muted">{j.outcome ?? "—"}</span>
-          </li>
-        ))}
-      </ul>
-
-      {settlement ? (
-        <div className="detail-cta">
-          <p className="muted">
-            Drill into a settlement that supports this provider score.
-          </p>
+    <div
+      className="provider-modal-root"
+      role="presentation"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <aside
+        className="provider-detail provider-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+      >
+        <div className="drawer-head">
+          <h2 id={titleId}>{provider.display_name ?? provider.provider_id}</h2>
           <button
+            ref={closeRef}
             type="button"
-            className="btn btn-primary"
-            disabled={explainBusy}
-            onClick={() => onExplain(settlement.tx_hash)}
+            className="drawer-close"
+            onClick={onClose}
           >
-            {explainBusy ? (
-              <Spinner size="sm" label="Explaining" />
-            ) : (
-              "Explain settlement"
-            )}
+            close
           </button>
         </div>
-      ) : null}
 
-      {provider.authorization_compatibility?.note ? (
-        <p className="gap-note">{provider.authorization_compatibility.note}</p>
-      ) : null}
-    </aside>
+        <div className="provider-modal-body">
+          <p className="provider-id mono">{provider.provider_id}</p>
+          {provider.wallet ? (
+            <p className="mono muted">{provider.wallet}</p>
+          ) : null}
+
+          <div className="detail-stats">
+            <div>
+              <span className="metric-label">completion</span>
+              <span className="metric-value">{pct(p.completion_rate)}</span>
+            </div>
+            <div>
+              <span className="metric-label">verified jobs</span>
+              <span className="metric-value">{p.verified_jobs}</span>
+            </div>
+            <div>
+              <span className="metric-label">completed</span>
+              <span className="metric-value">{p.completed_jobs}</span>
+            </div>
+            <div>
+              <span className="metric-label">rejected</span>
+              <span className="metric-value">{p.rejected_jobs}</span>
+            </div>
+            <div>
+              <span className="metric-label">payment-linked</span>
+              <span className="metric-value">{p.payment_linked_jobs}</span>
+            </div>
+            <div>
+              <span className="metric-label">8004 feedback</span>
+              <span className="metric-value">{p.feedback_events}</span>
+            </div>
+          </div>
+
+          <h3 className="drawer-sub">Evidence distribution</h3>
+          <div className="dist-bars" aria-label="Evidence distribution">
+            {(["high", "medium", "low"] as const).map((k) => (
+              <div key={k} className="dist-row">
+                <span>{k}</span>
+                <div className="score-track">
+                  <div
+                    className={`score-fill is-${k}`}
+                    style={{
+                      width: `${Math.min(100, (p.evidence_distribution[k] / Math.max(p.verified_jobs, 1)) * 100)}%`,
+                    }}
+                  />
+                </div>
+                <span>{p.evidence_distribution[k]}</span>
+              </div>
+            ))}
+          </div>
+
+          <h3 className="drawer-sub">Ranking reasons</h3>
+          <div className="chip-row">
+            {provider.ranking_explanation.map((r) => (
+              <span key={r} className="chip chip-reason">
+                {r}
+              </span>
+            ))}
+          </div>
+
+          <h3 className="drawer-sub">Recent jobs</h3>
+          {provider.sample_jobs.length ? (
+            <ul className="job-list">
+              {provider.sample_jobs.map((j) => (
+                <li key={j.job_id}>
+                  <span>{j.job_id}</span>
+                  <span className="muted">{j.outcome ?? "—"}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="muted">No recent jobs projected for this provider yet.</p>
+          )}
+
+          {settlement ? (
+            <div className="detail-cta">
+              <p className="muted">
+                Drill into a settlement that supports this provider score.
+              </p>
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={explainBusy}
+                onClick={() => onExplain(settlement.tx_hash)}
+              >
+                {explainBusy ? (
+                  <Spinner size="sm" label="Explaining" />
+                ) : (
+                  "Explain settlement"
+                )}
+              </button>
+            </div>
+          ) : null}
+
+          {provider.authorization_compatibility?.note ? (
+            <p className="gap-note">
+              {provider.authorization_compatibility.note}
+            </p>
+          ) : null}
+        </div>
+      </aside>
+    </div>
   );
 }

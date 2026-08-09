@@ -795,6 +795,18 @@ main {
   background: var(--copper);
 }
 
+.provider-modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: clamp(0.75rem, 3vw, 1.5rem);
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(4px);
+  animation: fade-in 0.2s ease both;
+}
+
 .provider-detail {
   border: 1px solid rgba(154, 154, 154, 0.18);
   background: rgba(10, 10, 10, 0.72);
@@ -802,6 +814,24 @@ main {
   padding: 1.1rem 1.2rem;
   margin-top: 0.5rem;
   animation: rise 0.4s ease both;
+}
+
+.provider-detail.provider-modal {
+  margin-top: 0;
+  width: min(36rem, 100%);
+  max-height: min(88vh, 52rem);
+  display: flex;
+  flex-direction: column;
+  background: rgba(12, 12, 12, 0.96);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+  animation: modal-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.provider-modal-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 0.15rem;
+  margin-top: 0.25rem;
 }
 
 .provider-id {

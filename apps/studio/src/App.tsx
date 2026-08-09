@@ -397,15 +397,19 @@ export function App() {
               selectedId={selected?.provider_id ?? null}
               onSelect={setSelected}
             />
-            {selected ? (
-              <ProviderDetail
-                provider={selected}
-                explainBusy={explainBusy}
-                onClose={() => setSelected(null)}
-                onExplain={(tx) => void runExplain(tx)}
-              />
-            ) : null}
           </section>
+        ) : null}
+
+        {selected ? (
+          <ProviderDetail
+            provider={selected}
+            explainBusy={explainBusy}
+            onClose={() => setSelected(null)}
+            onExplain={(tx) => {
+              setSelected(null);
+              void runExplain(tx);
+            }}
+          />
         ) : null}
 
         {explainBusy && !explain ? (
