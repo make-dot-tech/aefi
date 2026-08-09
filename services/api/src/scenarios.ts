@@ -1,13 +1,13 @@
-/** Curated NL search presets grounded in Arc testnet agent activity (not seeded demos). */
+/** Curated NL search presets grounded in Arc testnet agent activity. */
 export const SEARCH_SCENARIOS = [
   {
-    id: "completed-providers",
-    label: "Completed jobs",
-    blurb: "Providers with at least one completed ERC-8183 job on Arc testnet.",
+    id: "gateway-treasury",
+    label: "Gateway treasury",
+    blurb: "Gateway liquidity / treasury ops agents from live registrations.",
     filters: {
-      query: "agent providers with completed jobs",
-      minimum_verified_jobs: 1,
-      minimum_completion_rate: 0.5,
+      query: "Gateway treasury liquidity drift detector",
+      minimum_verified_jobs: 0,
+      minimum_completion_rate: 0,
       minimum_confidence: "unverified" as const,
     },
   },
@@ -23,12 +23,12 @@ export const SEARCH_SCENARIOS = [
     },
   },
   {
-    id: "gateway-treasury",
-    label: "Gateway treasury",
-    blurb: "Gateway liquidity / treasury ops agents from live registrations.",
+    id: "completed-providers",
+    label: "Completed jobs",
+    blurb: "Providers with at least one completed ERC-8183 job on Arc testnet.",
     filters: {
-      query: "Gateway treasury liquidity drift detector",
-      minimum_verified_jobs: 0,
+      query: "providers with completed jobs and settlement evidence",
+      minimum_verified_jobs: 1,
       minimum_completion_rate: 0,
       minimum_confidence: "unverified" as const,
     },

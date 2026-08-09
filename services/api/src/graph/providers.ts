@@ -295,13 +295,15 @@ export async function searchProviderPerformance(
   }
 
   try {
-    // When semantic recall returned candidates, restrict to those IDs (plus
-    // still allow empty map → full graph scan as fallback).
-    const restrictIds =
+    // Semantic hits rank results; hard-restrict only as a first pass. If that
+    // yields nothing (common when NL recall ≠ structured job filters), scan the
+    // full graph and still apply semantic scores when present.
+    const semanticIds =
       query && semanticMap.size > 0 ? [...semanticMap.keys()] : null;
 
-    const result = await session.run(
-      `
+    async function fetchRows(restrictIds: string[] | null) {
+      const result = await session.run(
+        `
       MATCH (a:Agent)
       WHERE (a.chain_id IS NULL OR toString(a.chain_id) = $chainId)
         AND coalesce(a.demo, false) = false
@@ -357,20 +359,29 @@ export async function searchProviderPerformance(
       RETURN a, w, jobs, outcomes, payments, verified_jobs, completed_jobs,
              rejected_jobs, expired_jobs, payment_linked_jobs, feedback_events
       `,
-      { minJobs, capability, restrictIds, chainId: chainId() },
-    );
+        { minJobs, capability, restrictIds, chainId: chainId() },
+      );
 
-    const rows: ProviderPerformance[] = [];
-    for (const rec of result.records) {
-      const mapped = mapRecord(rec);
-      if (!mapped) continue;
-      if (mapped.performance.completion_rate + 1e-9 < minRate) continue;
-      if (CONF_RANK[mapped.performance.confidence] < CONF_RANK[minConf]) continue;
+      const mappedRows: ProviderPerformance[] = [];
+      for (const rec of result.records) {
+        const mapped = mapRecord(rec);
+        if (!mapped) continue;
+        if (mapped.performance.completion_rate + 1e-9 < minRate) continue;
+        if (CONF_RANK[mapped.performance.confidence] < CONF_RANK[minConf]) {
+          continue;
+        }
 
-      const sem = semanticMap.get(mapped.provider_id) ?? null;
-      mapped.semantic_similarity = sem;
-      mapped.graph_score = mapped.score;
-      rows.push(mapped);
+        const sem = semanticMap.get(mapped.provider_id) ?? null;
+        mapped.semantic_similarity = sem;
+        mapped.graph_score = mapped.score;
+        mappedRows.push(mapped);
+      }
+      return mappedRows;
+    }
+
+    let rows = await fetchRows(semanticIds);
+    if (rows.length === 0 && semanticIds) {
+      rows = await fetchRows(null);
     }
 
     const maxGraph = Math.max(...rows.map((r) => r.graph_score), 1);

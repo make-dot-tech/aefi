@@ -36,6 +36,7 @@ export function App() {
     SEARCH_SCENARIOS[0]!.filters,
   );
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showPresets, setShowPresets] = useState(false);
   const [liveOk, setLiveOk] = useState(false);
   const [mode, setMode] = useState<DataMode>("offline");
   const [search, setSearch] = useState<AefiEnvelope<ProviderSearchResult> | null>(
@@ -222,30 +223,11 @@ export function App() {
             </p>
           ) : null}
 
-          <div className="scenarios" role="list">
-            {scenarios.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                role="listitem"
-                className={`example ${activeScenario === s.id ? "is-active" : ""}`}
-                disabled={busy || !liveOk}
-                onClick={() => {
-                  setActiveScenario(s.id);
-                  setFilters(s.filters);
-                  void runSearch(s.filters);
-                }}
-              >
-                <span className="example-label">{s.label}</span>
-                <span className="example-blurb">{s.blurb}</span>
-              </button>
-            ))}
-          </div>
-
           <form
             className="intent-form"
             onSubmit={(e) => {
               e.preventDefault();
+              setShowPresets(false);
               void runSearch(filters);
             }}
           >
@@ -253,18 +235,59 @@ export function App() {
               Intent
             </label>
             <div className="intent-row">
-              <input
-                id="intent"
-                className="tx-input intent-input"
-                value={filters.query ?? ""}
-                onChange={(e) =>
-                  setFilters((f) => ({ ...f, query: e.target.value }))
-                }
-                placeholder="e.g. CCTP cross-chain settlement on Arc"
-                spellCheck={false}
-                autoComplete="off"
-                disabled={busy || !liveOk}
-              />
+              <div className="intent-field">
+                <input
+                  id="intent"
+                  className="tx-input intent-input"
+                  value={filters.query ?? ""}
+                  onChange={(e) => {
+                    setActiveScenario("");
+                    setFilters((f) => ({ ...f, query: e.target.value }));
+                  }}
+                  placeholder="e.g. CCTP cross-chain settlement on Arc"
+                  spellCheck={false}
+                  autoComplete="off"
+                  disabled={busy || !liveOk}
+                />
+                <div className="preset-wrap">
+                  <button
+                    type="button"
+                    className="btn btn-ghost preset-trigger"
+                    disabled={busy || !liveOk || scenarios.length === 0}
+                    aria-expanded={showPresets}
+                    aria-haspopup="listbox"
+                    onClick={() => setShowPresets((v) => !v)}
+                  >
+                    {activeScenario
+                      ? (scenarios.find((s) => s.id === activeScenario)?.label ??
+                        "Preset")
+                      : "Presets"}
+                  </button>
+                  {showPresets ? (
+                    <ul className="preset-menu" role="listbox">
+                      {scenarios.map((s) => (
+                        <li key={s.id} role="option" aria-selected={activeScenario === s.id}>
+                          <button
+                            type="button"
+                            className={
+                              activeScenario === s.id ? "is-active" : undefined
+                            }
+                            onClick={() => {
+                              setActiveScenario(s.id);
+                              setFilters(s.filters);
+                              setShowPresets(false);
+                              void runSearch(s.filters);
+                            }}
+                          >
+                            <span className="example-label">{s.label}</span>
+                            <span className="example-blurb">{s.blurb}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+              </div>
               <button
                 className="btn btn-primary"
                 type="submit"

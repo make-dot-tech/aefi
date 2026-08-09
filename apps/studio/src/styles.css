@@ -897,6 +897,108 @@ main {
   align-items: stretch;
 }
 
+.intent-field {
+  position: relative;
+  flex: 1 1 18rem;
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  background: var(--ink-2);
+}
+
+.intent-field:focus-within {
+  border-color: color-mix(in srgb, var(--mint) 55%, var(--line));
+}
+
+.intent-field .intent-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 2.75rem;
+  padding: 0.65rem 0.9rem;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+
+.intent-field .intent-input:focus {
+  outline: none;
+}
+
+.preset-wrap {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: stretch;
+  border-left: 1px solid var(--line);
+}
+
+.preset-trigger {
+  height: 100%;
+  min-width: 7.5rem;
+  border: none;
+  border-radius: 0;
+  padding: 0 0.85rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mist);
+  white-space: nowrap;
+}
+
+.preset-trigger:hover:not(:disabled) {
+  color: var(--paper);
+  background: color-mix(in srgb, var(--ink-3) 70%, transparent);
+}
+
+.preset-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  z-index: 20;
+  width: min(22rem, 78vw);
+  margin: 0;
+  padding: 0.35rem;
+  list-style: none;
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.preset-menu button {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: inherit;
+  padding: 0.65rem 0.75rem;
+  cursor: pointer;
+  font: inherit;
+}
+
+.preset-menu button:hover,
+.preset-menu button.is-active {
+  background: color-mix(in srgb, var(--mint) 12%, transparent);
+}
+
+.preset-menu .example-label {
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--paper);
+}
+
+.preset-menu .example-blurb {
+  font-size: 0.72rem;
+  color: var(--mist);
+  line-height: 1.35;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 .intent-input {
   flex: 1 1 18rem;
   min-width: 0;
