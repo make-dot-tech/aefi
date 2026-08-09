@@ -1,0 +1,35 @@
+# Static studio (Vite) → nginx
+# docker build -f deploy/Dockerfile.studio \
+#   --build-arg VITE_AEFI_API_URL=https://api.aefi.io \
+#   -t aefi-studio .
+
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+
+FROM base AS deps
+WORKDIR /app
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/studio/package.json ./apps/studio/
+RUN pnpm install --frozen-lockfile --filter @aefi/studio...
+
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/studio/node_modules ./apps/studio/node_modules
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/studio ./apps/studio
+COPY assets/aefi-icon.png assets/aefi-logo.png ./apps/studio/public/brand/
+
+ARG VITE_AEFI_API_URL=https://api.aefi.io
+ARG VITE_AEFI_API_KEY=
+ENV VITE_AEFI_API_URL=$VITE_AEFI_API_URL
+ENV VITE_AEFI_API_KEY=$VITE_AEFI_API_KEY
+
+WORKDIR /app/apps/studio
+RUN pnpm build
+
+FROM nginx:1.27-alpine
+COPY deploy/nginx-spa.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/apps/studio/dist /usr/share/nginx/html
+EXPOSE 8080
+CMD ["nginx", "-g", "daemon off;"]

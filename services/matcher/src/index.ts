@@ -1,3 +1,4 @@
+import { createServer } from "node:http";
 import { loadConfig } from "./config.js";
 import { listCorrelators } from "./correlators/index.js";
 import { EventStore } from "./db/postgres.js";
@@ -7,12 +8,22 @@ import { projectOnce } from "./project/run.js";
 async function main() {
   const cfg = loadConfig();
   console.log("aefi matcher", {
+    chainId: cfg.chainId,
     correlators: listCorrelators(),
     once: cfg.once,
     batchSize: cfg.batchSize,
   });
 
-  const events = new EventStore(cfg.databaseUrl);
+  if (cfg.healthPort != null && Number.isFinite(cfg.healthPort)) {
+    createServer((_req, res) => {
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(JSON.stringify({ ok: true, service: "matcher", chainId: cfg.chainId }));
+    }).listen(cfg.healthPort, "0.0.0.0", () => {
+      console.log(`matcher health on 0.0.0.0:${cfg.healthPort}`);
+    });
+  }
+
+  const events = new EventStore(cfg.databaseUrl, cfg.chainId);
   const graph = new GraphStore(cfg.neo4jUri, cfg.neo4jUser, cfg.neo4jPassword);
 
   try {

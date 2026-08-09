@@ -21,20 +21,36 @@ export interface BaseEventRef {
 
 export class EventStore {
   readonly pool: pg.Pool;
+  readonly chainId: string;
+  readonly cursorId: string;
 
-  constructor(databaseUrl: string) {
+  constructor(databaseUrl: string, chainId: string) {
     this.pool = new Pool({ connectionString: databaseUrl });
+    this.chainId = chainId;
+    this.cursorId = `neo4j:${chainId}`;
   }
 
   async close() {
     await this.pool.end();
   }
 
+  async ensureCursor(): Promise<void> {
+    await this.pool.query(
+      `INSERT INTO matcher_cursor (id, last_block, last_log_index)
+       VALUES ($1, 0, 0)
+       ON CONFLICT (id) DO NOTHING`,
+      [this.cursorId],
+    );
+  }
+
   async getCursor(): Promise<Cursor> {
+    await this.ensureCursor();
     const { rows } = await this.pool.query<{
       last_block: string;
       last_log_index: number;
-    }>(`SELECT last_block, last_log_index FROM matcher_cursor WHERE id = 'neo4j'`);
+    }>(`SELECT last_block, last_log_index FROM matcher_cursor WHERE id = $1`, [
+      this.cursorId,
+    ]);
     if (!rows[0]) return { lastBlock: 0, lastLogIndex: 0 };
     return {
       lastBlock: Number(rows[0].last_block),
@@ -45,25 +61,28 @@ export class EventStore {
   async setCursor(cursor: Cursor): Promise<void> {
     await this.pool.query(
       `INSERT INTO matcher_cursor (id, last_block, last_log_index, updated_at)
-       VALUES ('neo4j', $1, $2, now())
+       VALUES ($1, $2, $3, now())
        ON CONFLICT (id) DO UPDATE SET
          last_block = EXCLUDED.last_block,
          last_log_index = EXCLUDED.last_log_index,
          updated_at = now()`,
-      [cursor.lastBlock, cursor.lastLogIndex],
+      [this.cursorId, cursor.lastBlock, cursor.lastLogIndex],
     );
   }
 
-  /** Unified watermark stream — never skip events across families. */
+  /** Unified watermark stream for one chain — never skip events across families. */
   async fetchBasePage(cursor: Cursor, limit: number): Promise<BaseEventRef[]> {
     const { rows } = await this.pool.query(
       `SELECT id, chain_id::text, block_number::text, tx_hash, log_index, event_name, address
        FROM evt_base
-       WHERE (block_number > $1)
-          OR (block_number = $1 AND log_index > $2)
+       WHERE chain_id = $1
+         AND (
+           (block_number > $2)
+           OR (block_number = $2 AND log_index > $3)
+         )
        ORDER BY block_number, log_index
-       LIMIT $3`,
-      [cursor.lastBlock, cursor.lastLogIndex, limit],
+       LIMIT $4`,
+      [this.chainId, cursor.lastBlock, cursor.lastLogIndex, limit],
     );
     return rows as BaseEventRef[];
   }

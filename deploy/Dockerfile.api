@@ -1,0 +1,30 @@
+# Hono API (Cloud Run) — TypeScript via tsx
+# docker build -f deploy/Dockerfile.api -t aefi-api .
+
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+
+FROM base AS deps
+WORKDIR /app
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY services/api/package.json ./services/api/
+RUN pnpm install --frozen-lockfile --filter @aefi/api...
+
+FROM base AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=8787
+
+RUN addgroup --system --gid 1001 nodejs \
+  && adduser --system --uid 1001 apiuser
+
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/services/api/node_modules ./services/api/node_modules
+
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY services/api ./services/api
+
+USER apiuser
+WORKDIR /app/services/api
+EXPOSE 8787
+CMD ["pnpm", "exec", "tsx", "src/index.ts"]

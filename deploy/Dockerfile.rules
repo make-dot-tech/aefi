@@ -1,0 +1,21 @@
+# Drools / Spring Boot rules (Cloud Run)
+# docker build -f deploy/Dockerfile.rules -t aefi-rules .
+
+FROM maven:3.9-eclipse-temurin-17 AS build
+WORKDIR /src
+COPY services/rules/pom.xml ./
+COPY services/rules/.mvn ./.mvn
+COPY services/rules/mvnw ./
+RUN chmod +x mvnw && ./mvnw -q -B dependency:go-offline || true
+COPY services/rules/src ./src
+RUN ./mvnw -q -B -DskipTests package \
+  && mv target/rules-*.jar /out.jar
+
+FROM eclipse-temurin:17-jre-jammy
+WORKDIR /app
+RUN useradd -r -u 1001 rules
+COPY --from=build /out.jar /app/app.jar
+USER rules
+ENV PORT=8090
+EXPOSE 8090
+ENTRYPOINT ["java", "-XX:+UseContainerSupport", "-XX:MaxRAMPercentage=75.0", "-jar", "/app/app.jar"]

@@ -1,5 +1,5 @@
 import neo4j, { type Driver, type Record as NeoRecord } from "neo4j-driver";
-import { loadNeo4jConfig } from "../lib/config.js";
+import { loadChainId, loadNeo4jConfig } from "../lib/config.js";
 
 let driver: Driver | null = null;
 
@@ -9,6 +9,15 @@ export function getDriver(): Driver {
     driver = neo4j.driver(cfg.uri, neo4j.auth.basic(cfg.user, cfg.password));
   }
   return driver;
+}
+
+export function chainId(): string {
+  return loadChainId();
+}
+
+/** Prefer same-chain nodes when multiple networks share one Aura instance. */
+function chainClause(alias: string): string {
+  return `(${alias}.chain_id IS NULL OR toString(${alias}.chain_id) = $chainId)`;
 }
 
 export async function closeDriver(): Promise<void> {
@@ -75,6 +84,7 @@ export async function findPaymentsByTx(txHash: string): Promise<PaymentView[]> {
     const result = await session.run(
       `
       MATCH (p:Payment {tx_hash: $hash})
+      WHERE ${chainClause("p")}
       OPTIONAL MATCH (p)-[:SETTLED_BY]->(t:TransferEvent)
       OPTIONAL MATCH (p)-[:FROM_WALLET]->(fw:Wallet)
       OPTIONAL MATCH (p)-[:TO_WALLET]->(tw:Wallet)
@@ -86,7 +96,7 @@ export async function findPaymentsByTx(txHash: string): Promise<PaymentView[]> {
              collect(DISTINCT j) AS jobs,
              collect(DISTINCT e) AS evidence
       `,
-      { hash },
+      { hash, chainId: chainId() },
     );
     return result.records.map((rec) => ({
       payment: propsOf(rec, "p")!,
@@ -108,6 +118,7 @@ export async function findPaymentById(paymentId: string): Promise<PaymentView | 
     const result = await session.run(
       `
       MATCH (p:Payment {id: $id})
+      WHERE ${chainClause("p")}
       OPTIONAL MATCH (p)-[:SETTLED_BY]->(t:TransferEvent)
       OPTIONAL MATCH (p)-[:FROM_WALLET]->(fw:Wallet)
       OPTIONAL MATCH (p)-[:TO_WALLET]->(tw:Wallet)
@@ -120,7 +131,7 @@ export async function findPaymentById(paymentId: string): Promise<PaymentView | 
              collect(DISTINCT e) AS evidence
       LIMIT 1
       `,
-      { id: paymentId },
+      { id: paymentId, chainId: chainId() },
     );
     const rec = result.records[0];
     if (!rec) return null;
@@ -142,17 +153,21 @@ export async function explainTx(txHash: string): Promise<TxExplainView> {
   const hash = txHash.toLowerCase();
   const payments = await findPaymentsByTx(hash);
   const session = getDriver().session();
+  const cid = chainId();
   try {
     const result = await session.run(
       `
       OPTIONAL MATCH (t:TransferEvent {tx_hash: $hash})
+      WHERE ${chainClause("t")}
       OPTIONAL MATCH (m:MemoEvent {tx_hash: $hash})
+      WHERE ${chainClause("m")}
       OPTIONAL MATCH (j:Job {tx_hash: $hash})
+      WHERE ${chainClause("j")}
       RETURN collect(DISTINCT t) AS transfers,
              collect(DISTINCT m) AS memos,
              collect(DISTINCT j) AS jobs
       `,
-      { hash },
+      { hash, chainId: cid },
     );
     const rec = result.records[0];
     return {
@@ -169,16 +184,18 @@ export async function explainTx(txHash: string): Promise<TxExplainView> {
 
 export async function findJob(jobKey: string): Promise<JobView | null> {
   const session = getDriver().session();
+  const cid = chainId();
   // Accept full id or numeric job_id (optionally with chain prefix).
   const candidates = [jobKey];
   if (/^\d+$/.test(jobKey)) {
-    candidates.push(`job:erc8183:5042002:${jobKey}`);
+    candidates.push(`job:erc8183:${cid}:${jobKey}`);
   }
   try {
     const result = await session.run(
       `
       MATCH (j:Job)
-      WHERE j.id IN $candidates OR j.job_id = $jobKey
+      WHERE (j.id IN $candidates OR j.job_id = $jobKey)
+        AND ${chainClause("j")}
       WITH j LIMIT 1
       OPTIONAL MATCH (j)-[:REQUESTER]->(req:Agent)
       OPTIONAL MATCH (j)-[:PROVIDER]->(prov:Agent)
@@ -194,7 +211,7 @@ export async function findJob(jobKey: string): Promise<JobView | null> {
              collect(DISTINCT p) AS payments,
              collect(DISTINCT e) AS evidence
       `,
-      { candidates, jobKey },
+      { candidates, jobKey, chainId: cid },
     );
     const rec = result.records[0];
     if (!rec || !rec.get("j")) return null;
@@ -218,20 +235,23 @@ export async function findAgentActivity(
 ): Promise<{ agent: Props | null; wallet: Props | null; items: ActivityItem[] }> {
   const session = getDriver().session();
   const key = id.toLowerCase();
+  const cid = chainId();
   try {
     // Resolve agent by id, or wallet by address / wallet id.
     const agentRes = await session.run(
       `
       OPTIONAL MATCH (a:Agent)
-      WHERE toLower(a.id) = $key OR toLower(coalesce(a.agent_id,'')) = $key
+      WHERE (toLower(a.id) = $key OR toLower(coalesce(a.agent_id,'')) = $key)
+        AND ${chainClause("a")}
       WITH a LIMIT 1
       OPTIONAL MATCH (w:Wallet)
-      WHERE toLower(w.id) = $key OR toLower(w.address) = $key
-         OR ($key STARTS WITH '0x' AND toLower(w.address) = $key)
+      WHERE (toLower(w.id) = $key OR toLower(w.address) = $key
+         OR ($key STARTS WITH '0x' AND toLower(w.address) = $key))
+        AND ${chainClause("w")}
       WITH a, w LIMIT 1
       RETURN a, w
       `,
-      { key },
+      { key, chainId: cid },
     );
     const arec = agentRes.records[0];
     const agent = arec ? propsOf(arec, "a") : null;
@@ -239,8 +259,10 @@ export async function findAgentActivity(
 
     if (agent && !wallet) {
       const wr = await session.run(
-        `MATCH (a:Agent {id: $id})-[:CONTROLS]->(w:Wallet) RETURN w LIMIT 1`,
-        { id: agent.id },
+        `MATCH (a:Agent {id: $id})-[:CONTROLS]->(w:Wallet)
+         WHERE ${chainClause("w")}
+         RETURN w LIMIT 1`,
+        { id: agent.id, chainId: cid },
       );
       wallet = wr.records[0] ? propsOf(wr.records[0], "w") : null;
     }
@@ -251,9 +273,14 @@ export async function findAgentActivity(
       const payRes = await session.run(
         `
         MATCH (p:Payment)-[:FROM_WALLET|TO_WALLET]->(w:Wallet {address: $addr})
+        WHERE ${chainClause("p")} AND ${chainClause("w")}
         RETURN p LIMIT $limit
         `,
-        { addr: String(wallet.address).toLowerCase(), limit: neo4j.int(limit) },
+        {
+          addr: String(wallet.address).toLowerCase(),
+          limit: neo4j.int(limit),
+          chainId: cid,
+        },
       );
       for (const rec of payRes.records) {
         const p = propsOf(rec, "p");
@@ -265,9 +292,10 @@ export async function findAgentActivity(
       const evRes = await session.run(
         `
         MATCH (e:Evidence)-[:SUPPORTS]->(a:Agent {id: $id})
+        WHERE ${chainClause("a")}
         RETURN e ORDER BY e.reference DESC LIMIT $limit
         `,
-        { id: agent.id, limit: neo4j.int(limit) },
+        { id: agent.id, limit: neo4j.int(limit), chainId: cid },
       );
       for (const rec of evRes.records) {
         const e = propsOf(rec, "e");
@@ -277,9 +305,10 @@ export async function findAgentActivity(
       const jobRes = await session.run(
         `
         MATCH (j:Job)-[:REQUESTER|PROVIDER|EVALUATOR]->(a:Agent {id: $id})
+        WHERE ${chainClause("j")} AND ${chainClause("a")}
         RETURN j LIMIT $limit
         `,
-        { id: agent.id, limit: neo4j.int(limit) },
+        { id: agent.id, limit: neo4j.int(limit), chainId: cid },
       );
       for (const rec of jobRes.records) {
         const j = propsOf(rec, "j");

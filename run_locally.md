@@ -170,7 +170,10 @@ Studio shows **API/graph offline** when `:8787` is down or `/health` reports Neo
 
 ### Cloud Run note (preview)
 
-Expect **separate** services (same shape as urge): API vs static `www` / `studio`. Point studio’s `VITE_AEFI_API_URL` at the API origin at build time, and allow that origin in API CORS (`AEFI_CORS_ORIGINS` or built-in `demo.aefi.io` list).
+Production deploy lives in [`deploy/README.md`](deploy/README.md): Cloudflare Tunnel →
+internal Cloud Run (`aefi-www` / `aefi-studio` / `aefi-api` + indexer/matcher workers),
+Cloud SQL in `aefi-io`, Neo4j Aura. Point studio’s `VITE_AEFI_API_URL` at the API
+origin at build time; CORS includes `demo.aefi.io` / `aefi.io` by default.
 
 ## 6. Optional: indexer → matcher → live Arc data
 

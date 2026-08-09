@@ -1,0 +1,27 @@
+# Static www (Vite) → nginx
+# docker build -f deploy/Dockerfile.www -t aefi-www .
+
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+
+FROM base AS deps
+WORKDIR /app
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/www/package.json ./apps/www/
+RUN pnpm install --frozen-lockfile --filter @aefi/www...
+
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps/www/node_modules ./apps/www/node_modules
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/www ./apps/www
+COPY assets/aefi-icon.png assets/aefi-logo.png ./apps/www/public/brand/
+WORKDIR /app/apps/www
+RUN pnpm build
+
+FROM nginx:1.27-alpine
+COPY deploy/nginx-spa.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /app/apps/www/dist /usr/share/nginx/html
+EXPOSE 8080
+CMD ["nginx", "-g", "daemon off;"]

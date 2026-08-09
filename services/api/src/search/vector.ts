@@ -1,4 +1,4 @@
-import { getDriver } from "../graph/queries.js";
+import { chainId, getDriver } from "../graph/queries.js";
 import {
   capabilityText,
   EMBEDDING_DIMS,
@@ -66,7 +66,8 @@ export async function reindexProviderEmbeddings(): Promise<{
     const res = await session.run(
       `
       MATCH (a:Agent)
-      WHERE a.capabilities IS NOT NULL OR a.capability IS NOT NULL OR a.blurb IS NOT NULL OR a.capability_text IS NOT NULL
+      WHERE (a.capabilities IS NOT NULL OR a.capability IS NOT NULL OR a.blurb IS NOT NULL OR a.capability_text IS NOT NULL)
+        AND (a.chain_id IS NULL OR toString(a.chain_id) = $chainId)
       OPTIONAL MATCH (j:Job)-[:PROVIDER]->(a)
       WITH a, collect(DISTINCT j.capability) AS jobCaps
       RETURN a.id AS id,
@@ -77,6 +78,7 @@ export async function reindexProviderEmbeddings(): Promise<{
              a.capability_text AS capability_text,
              [c IN jobCaps WHERE c IS NOT NULL] AS job_capabilities
       `,
+      { chainId: chainId() },
     );
 
     let indexed = 0;
@@ -123,12 +125,14 @@ export async function vectorRecallProviders(
       CALL db.index.vector.queryNodes($index, $k, $embedding)
       YIELD node, score
       WHERE node:Agent
+        AND (node.chain_id IS NULL OR toString(node.chain_id) = $chainId)
       RETURN node.id AS id, score AS score
       `,
       {
         index: VECTOR_INDEX,
         k: Math.max(1, Math.min(topK, 50)),
         embedding: queryEmbedding,
+        chainId: chainId(),
       },
     );
     return res.records.map((r) => ({

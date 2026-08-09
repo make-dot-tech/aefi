@@ -1,4 +1,5 @@
 import { getDriver } from "../graph/queries.js";
+import { loadChainId } from "../lib/config.js";
 
 export interface SeedProviderSpec {
   id: string;
@@ -93,7 +94,7 @@ function buildJobs(
   return jobs.map((j) => ({ ...j }));
 }
 
-const CHAIN = "5042002";
+const CHAIN = loadChainId();
 
 export async function seedDemoProviders(): Promise<{
   providers: number;

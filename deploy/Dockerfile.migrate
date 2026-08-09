@@ -1,0 +1,10 @@
+# SQL migrate job — applies services/indexer/migrations
+# docker build -f deploy/Dockerfile.migrate -t aefi-migrate .
+
+FROM postgres:16-alpine
+WORKDIR /work
+COPY services/indexer/migrations ./migrations
+COPY deploy/migrate.sh ./migrate.sh
+RUN chmod +x ./migrate.sh
+ENV MIGRATIONS_DIR=/work/migrations
+ENTRYPOINT ["/work/migrate.sh"]

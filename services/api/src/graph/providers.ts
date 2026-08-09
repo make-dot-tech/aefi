@@ -1,4 +1,4 @@
-import { getDriver } from "./queries.js";
+import { chainId, getDriver } from "./queries.js";
 import { getEmbeddings } from "../search/embeddings.js";
 import { fuseScores } from "../search/rank.js";
 import { vectorRecallProviders } from "../search/vector.js";
@@ -303,7 +303,9 @@ export async function searchProviderPerformance(
     const result = await session.run(
       `
       MATCH (j:Job)-[:PROVIDER]->(a:Agent)
-      WHERE $restrictIds IS NULL OR a.id IN $restrictIds
+      WHERE ($restrictIds IS NULL OR a.id IN $restrictIds)
+        AND (a.chain_id IS NULL OR toString(a.chain_id) = $chainId)
+        AND (j.chain_id IS NULL OR toString(j.chain_id) = $chainId)
       OPTIONAL MATCH (j)-[:HAS_OUTCOME]->(o:Outcome)
       OPTIONAL MATCH (pay:Payment)-[:FOR_JOB]->(j)
       OPTIONAL MATCH (a)-[:CONTROLS]->(w:Wallet)
@@ -333,7 +335,7 @@ export async function searchProviderPerformance(
       RETURN a, w, jobs, outcomes, payments, verified_jobs, completed_jobs,
              rejected_jobs, expired_jobs, payment_linked_jobs, feedback_events
       `,
-      { minJobs, capability, restrictIds },
+      { minJobs, capability, restrictIds, chainId: chainId() },
     );
 
     const rows: ProviderPerformance[] = [];
@@ -379,9 +381,11 @@ export async function getProviderPerformance(
     const result = await session.run(
       `
       MATCH (j:Job)-[:PROVIDER]->(a:Agent)
-      WHERE toLower(a.id) = $key
+      WHERE (toLower(a.id) = $key
          OR toLower(coalesce(a.wallet, '')) = $key
-         OR toLower(coalesce(a.display_name, '')) = $key
+         OR toLower(coalesce(a.display_name, '')) = $key)
+        AND (a.chain_id IS NULL OR toString(a.chain_id) = $chainId)
+        AND (j.chain_id IS NULL OR toString(j.chain_id) = $chainId)
       OPTIONAL MATCH (j)-[:HAS_OUTCOME]->(o:Outcome)
       OPTIONAL MATCH (pay:Payment)-[:FOR_JOB]->(j)
       OPTIONAL MATCH (a)-[:CONTROLS]->(w:Wallet)
@@ -404,7 +408,7 @@ export async function getProviderPerformance(
              rejected_jobs, expired_jobs, payment_linked_jobs, feedback_events
       LIMIT 1
       `,
-      { key },
+      { key, chainId: chainId() },
     );
     const rec = result.records[0];
     return rec ? mapRecord(rec) : null;
@@ -417,7 +421,11 @@ export async function countProviders(): Promise<number> {
   const session = getDriver().session();
   try {
     const res = await session.run(
-      `MATCH (:Job)-[:PROVIDER]->(a:Agent) RETURN count(DISTINCT a) AS n`,
+      `MATCH (j:Job)-[:PROVIDER]->(a:Agent)
+       WHERE (a.chain_id IS NULL OR toString(a.chain_id) = $chainId)
+         AND (j.chain_id IS NULL OR toString(j.chain_id) = $chainId)
+       RETURN count(DISTINCT a) AS n`,
+      { chainId: chainId() },
     );
     return toNum(res.records[0]?.get("n"));
   } finally {

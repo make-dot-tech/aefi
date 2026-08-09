@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -22,6 +24,8 @@ func main() {
 
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
+
+	startHealthServer()
 
 	reg, err := abi.LoadDir(cfg.ABIDir)
 	if err != nil {
@@ -49,11 +53,42 @@ func main() {
 		RPC:        client,
 		Store:      pg,
 		Registry:   reg,
+		PollEvery:  cfg.PollEvery,
+		BatchSize:  cfg.BatchSize,
 	}
 
-	slog.Info("aefi indexer", "rpc", cfg.RPCURL, "chain_id", cfg.ChainID)
+	slog.Info("aefi indexer",
+		"rpc", cfg.RPCURL,
+		"chain_id", cfg.ChainID,
+		"poll_every", cfg.PollEvery.String(),
+		"batch_size", cfg.BatchSize,
+	)
 	if err := svc.Run(ctx); err != nil && err != context.Canceled {
 		slog.Error("indexer stopped", "err", err)
 		os.Exit(1)
 	}
+}
+
+// Cloud Run requires a listening PORT; expose a tiny health endpoint.
+func startHealthServer() {
+	port := os.Getenv("PORT")
+	if port == "" {
+		return
+	}
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "service": "indexer"})
+	})
+	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "service": "indexer"})
+	})
+	go func() {
+		addr := "0.0.0.0:" + port
+		slog.Info("indexer health listening", "addr", addr)
+		if err := http.ListenAndServe(addr, mux); err != nil {
+			slog.Error("health server", "err", err)
+		}
+	}()
 }

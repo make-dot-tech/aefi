@@ -10,10 +10,11 @@ async function main() {
     return;
   }
 
-  const port = Number(process.env.AEFI_HTTP_PORT ?? 8787);
+  // Cloud Run sets PORT; local default remains AEFI_HTTP_PORT / 8787.
+  const port = Number(process.env.PORT ?? process.env.AEFI_HTTP_PORT ?? 8787);
   const app = createApp();
-  serve({ fetch: app.fetch, port }, () => {
-    console.log(`aefi api listening on :${port}`);
+  serve({ fetch: app.fetch, port, hostname: "0.0.0.0" }, () => {
+    console.log(`aefi api listening on 0.0.0.0:${port}`);
   });
 }
 

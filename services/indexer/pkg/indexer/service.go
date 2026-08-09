@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/make-dot-tech/aefi/services/indexer/pkg/abi"
@@ -25,10 +26,10 @@ type Service struct {
 
 func (s *Service) Run(ctx context.Context) error {
 	if s.PollEvery == 0 {
-		s.PollEvery = 2 * time.Second
+		s.PollEvery = 5 * time.Second
 	}
 	if s.BatchSize == 0 {
-		s.BatchSize = 20
+		s.BatchSize = 10
 	}
 
 	cursor, err := s.Store.GetCursor(ctx, s.ChainID)
@@ -44,21 +45,58 @@ func (s *Service) Run(ctx context.Context) error {
 		from = cursor.LastBlock + 1
 	}
 
-	slog.Info("indexer starting", "chain_id", s.ChainID, "from_block", from, "addresses", len(s.Registry.Addresses()))
+	slog.Info("indexer starting",
+		"chain_id", s.ChainID,
+		"from_block", from,
+		"addresses", len(s.Registry.Addresses()),
+		"poll_every", s.PollEvery.String(),
+		"batch_size", s.BatchSize,
+	)
 
-	ticker := time.NewTicker(s.PollEvery)
-	defer ticker.Stop()
+	backoff := s.PollEvery
+	const maxBackoff = 60 * time.Second
 
 	for {
-		if err := s.pollOnce(ctx, &from); err != nil {
-			slog.Error("poll error", "err", err)
+		err := s.pollOnce(ctx, &from)
+		sleep := s.PollEvery
+		if err != nil {
+			if isRateLimited(err) {
+				if backoff < s.PollEvery {
+					backoff = s.PollEvery
+				}
+				backoff *= 2
+				if backoff > maxBackoff {
+					backoff = maxBackoff
+				}
+				sleep = backoff
+				slog.Warn("rpc rate limited; backing off", "err", err, "sleep", sleep.String())
+			} else {
+				slog.Error("poll error", "err", err)
+				sleep = s.PollEvery
+				if sleep < 5*time.Second {
+					sleep = 5 * time.Second
+				}
+			}
+		} else {
+			backoff = s.PollEvery
 		}
+
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
-		case <-ticker.C:
+		case <-time.After(sleep):
 		}
 	}
+}
+
+func isRateLimited(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "429") ||
+		strings.Contains(msg, "rate limit") ||
+		strings.Contains(msg, "too many requests")
 }
 
 func (s *Service) pollOnce(ctx context.Context, from *uint64) error {

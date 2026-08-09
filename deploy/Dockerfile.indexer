@@ -1,0 +1,19 @@
+# Go indexer worker (Cloud Run) — health on PORT + poll loop
+# docker build -f deploy/Dockerfile.indexer -t aefi-indexer .
+
+FROM golang:1.22-bookworm AS build
+WORKDIR /src
+COPY services/indexer/go.mod services/indexer/go.sum ./
+RUN go mod download
+COPY services/indexer/ ./
+RUN CGO_ENABLED=0 GOOS=linux go build -o /out/indexer ./cmd/indexer
+
+FROM gcr.io/distroless/static-debian12:nonroot
+WORKDIR /
+COPY --from=build /out/indexer /indexer
+COPY services/indexer/abi /abi
+ENV INDEXER_ABI_DIR=/abi/5042002
+ENV PORT=8080
+EXPOSE 8080
+USER nonroot:nonroot
+ENTRYPOINT ["/indexer"]
