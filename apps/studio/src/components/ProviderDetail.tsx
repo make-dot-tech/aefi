@@ -1,4 +1,5 @@
 import type { ProviderResult } from "../lib/types";
+import { providerLabel, shortProviderId } from "../lib/labels";
 import { ExplorerLink } from "./ExplorerLink";
 import { Modal } from "./Modal";
 import { Spinner } from "./Spinner";
@@ -22,18 +23,22 @@ export function ProviderDetail({
 }: Props) {
   const p = provider.performance;
   const settlement = provider.sample_settlements[0];
+  const title = providerLabel(provider);
 
   return (
     <Modal
-      title={provider.display_name ?? provider.provider_id}
+      title={title}
+      titleFull={provider.display_name ?? provider.provider_id}
       onClose={onClose}
       size="md"
       subtitle={
-        <span className="provider-id mono">{provider.provider_id}</span>
+        <span className="provider-id mono" title={provider.provider_id}>
+          {shortProviderId(provider.provider_id)}
+        </span>
       }
     >
       {provider.wallet ? (
-        <p className="mono muted">
+        <p className="mono muted truncate-line">
           <ExplorerLink value={provider.wallet} kind="address" />
         </p>
       ) : null}

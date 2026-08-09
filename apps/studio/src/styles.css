@@ -532,11 +532,14 @@ main {
 .drawer-head {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 0.75rem;
   margin-bottom: 0.75rem;
+  min-width: 0;
 }
 
 .drawer-close {
+  flex: 0 0 auto;
   background: none;
   border: none;
   color: var(--mist);
@@ -545,6 +548,7 @@ main {
   cursor: pointer;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  padding-top: 0.15rem;
 }
 
 .drawer-close:hover {
@@ -899,6 +903,7 @@ main {
 }
 
 .modal-title-stack {
+  flex: 1 1 auto;
   min-width: 0;
   display: grid;
   gap: 0.25rem;
@@ -909,6 +914,7 @@ main {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 100%;
 }
 
 .modal-subtitle {
@@ -917,6 +923,16 @@ main {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.modal-subtitle .provider-id {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin: 0;
 }
 
 .modal-body {
@@ -930,6 +946,23 @@ main {
 .provider-id {
   margin: 0.25rem 0;
   font-size: 0.75rem;
+}
+
+.truncate-line {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.truncate-line .explorer-link {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
 }
 
 .detail-stats {

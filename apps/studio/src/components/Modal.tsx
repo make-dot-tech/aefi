@@ -2,6 +2,8 @@ import { useEffect, useId, useRef, type ReactNode } from "react";
 
 interface Props {
   title: string;
+  /** Full string for title tooltip when truncated. */
+  titleFull?: string;
   onClose: () => void;
   children: ReactNode;
   /** Wider panel for settlement path + panels. */
@@ -11,6 +13,7 @@ interface Props {
 
 export function Modal({
   title,
+  titleFull,
   onClose,
   children,
   size = "md",
@@ -50,7 +53,9 @@ export function Modal({
       >
         <div className="drawer-head">
           <div className="modal-title-stack">
-            <h2 id={titleId}>{title}</h2>
+            <h2 id={titleId} title={titleFull ?? title}>
+              {title}
+            </h2>
             {subtitle ? <div className="modal-subtitle">{subtitle}</div> : null}
           </div>
           <button
