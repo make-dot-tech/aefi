@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 import { ConfidencePanel } from "./components/ConfidencePanel";
-import { EvidenceDrawer } from "./components/EvidenceDrawer";
-import { EvidencePath } from "./components/EvidencePath";
 import { ProviderCards } from "./components/ProviderCards";
 import { ProviderDetail } from "./components/ProviderDetail";
+import { SettlementModal } from "./components/SettlementModal";
 import { Spinner } from "./components/Spinner";
 import { useToast } from "./components/Toast";
-import { VerifyPanel } from "./components/VerifyPanel";
 import {
   explainTransaction,
   fetchHealth,
@@ -16,7 +14,6 @@ import {
   type DataMode,
 } from "./lib/api";
 import { SEARCH_SCENARIOS } from "./lib/scenarios";
-import { ExplorerLink } from "./components/ExplorerLink";
 import type {
   AefiEnvelope,
   DemoScenario,
@@ -117,6 +114,7 @@ export function App() {
     setExplainHash(tx);
     setVerify(null);
     setStepIdx(null);
+    setExplain(null);
     setExplainBusy(true);
     toast.push("info", "Explaining settlement…");
     try {
@@ -125,13 +123,9 @@ export function App() {
       setMode(m);
       setStepIdx(0);
       toast.push("success", "Settlement evidence ready");
-      requestAnimationFrame(() => {
-        document
-          .querySelector(".explain-block")
-          ?.scrollIntoView({ behavior: "smooth", block: "start" });
-      });
     } catch (e) {
       setExplain(null);
+      setExplainHash(null);
       toast.push(
         "error",
         e instanceof Error ? e.message : "Explain failed",
@@ -399,39 +393,25 @@ export function App() {
           />
         ) : null}
 
-        {explainBusy && !explain ? (
-          <div className="loading-panel explain-loading">
-            <Spinner size="md" label="Loading settlement evidence" />
-          </div>
-        ) : null}
-
-        {explain ? (
-          <section className="result explain-block" aria-live="polite">
-            <h2 className="section-title">Settlement evidence</h2>
-            <p className="mono muted">
-              {explainHash ? (
-                <ExplorerLink value={explainHash} kind="tx" compact={false} />
-              ) : null}
-            </p>
-            <EvidencePath
-              steps={steps}
-              selectedIndex={stepIdx}
-              onSelect={setStepIdx}
-            />
-            <div className="result-grid">
-              <ConfidencePanel envelope={explain} />
-              <VerifyPanel
-                envelope={verify}
-                loading={verifyBusy}
-                onVerify={() => void runVerify()}
-              />
-            </div>
-            <EvidenceDrawer
-              step={stepIdx != null ? steps[stepIdx] ?? null : null}
-              evidence={explain.evidence}
-              onClose={() => setStepIdx(null)}
-            />
-          </section>
+        {explainBusy || explain ? (
+          <SettlementModal
+            loading={explainBusy}
+            explainHash={explainHash}
+            explain={explain}
+            verify={verify}
+            verifyBusy={verifyBusy}
+            steps={steps}
+            stepIdx={stepIdx}
+            onSelectStep={setStepIdx}
+            onVerify={() => void runVerify()}
+            onClose={() => {
+              setExplain(null);
+              setVerify(null);
+              setStepIdx(null);
+              setExplainHash(null);
+              setExplainBusy(false);
+            }}
+          />
         ) : null}
       </main>
 
