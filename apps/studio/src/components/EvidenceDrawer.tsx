@@ -1,5 +1,6 @@
 import type { EvidenceRef, ExplainStep } from "../lib/types";
 import { looksLikeAddress, looksLikeTxHash } from "../lib/explorer";
+import { formatAssetAmount } from "../lib/money";
 import { ExplorerLink } from "./ExplorerLink";
 
 interface Props {
@@ -28,7 +29,15 @@ function stepEvidence(
   return matched.length ? matched : evidence.slice(0, 1);
 }
 
-function FactValue({ name, value }: { name: string; value: string }) {
+function FactValue({
+  name,
+  value,
+  step,
+}: {
+  name: string;
+  value: string;
+  step: ExplainStep;
+}) {
   const key = name.toLowerCase();
   if (key.includes("tx") || key === "tx_hash" || looksLikeTxHash(value)) {
     return <ExplorerLink value={value} kind="tx" compact={false} />;
@@ -42,6 +51,16 @@ function FactValue({ name, value }: { name: string; value: string }) {
     looksLikeAddress(value)
   ) {
     return <ExplorerLink value={value} kind="address" compact={false} />;
+  }
+  if (key === "amount" || key === "value") {
+    return (
+      <>
+        {formatAssetAmount(value, {
+          asset: step.asset ?? "USDC",
+          decimals: step.decimals,
+        })}
+      </>
+    );
   }
   return <>{value}</>;
 }
@@ -65,7 +84,7 @@ export function EvidenceDrawer({ step, evidence, onClose }: Props) {
             <div key={k}>
               <dt>{k}</dt>
               <dd>
-                <FactValue name={k} value={String(v)} />
+                <FactValue name={k} value={String(v)} step={step} />
               </dd>
             </div>
           ))}

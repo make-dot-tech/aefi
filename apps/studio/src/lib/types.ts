@@ -30,6 +30,8 @@ export interface ExplainStep {
   to?: string;
   value?: string;
   amount?: string;
+  asset?: string;
+  decimals?: number | string | null;
   sender?: string;
 }
 
@@ -44,6 +46,7 @@ export interface VerifyPaymentRow {
   tx_hash: string;
   amount: string;
   asset: string;
+  decimals?: number | string | null;
   from: string | null;
   to: string | null;
   transfer_id: string | null;
@@ -92,6 +95,8 @@ export interface ProviderResult {
     tx_hash: string;
     payment_id: string | null;
     amount: string | null;
+    asset?: string | null;
+    decimals?: number | null;
   }>;
   authorization_compatibility?: {
     service_allowed: boolean | null;

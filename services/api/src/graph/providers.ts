@@ -44,6 +44,8 @@ export interface ProviderPerformance {
     tx_hash: string;
     payment_id: string | null;
     amount: string | null;
+    asset?: string | null;
+    decimals?: number | null;
   }>;
   ranking_explanation: string[];
   /** Fused score (semantic + graph) when query present; else graph score. */
@@ -226,6 +228,9 @@ function mapRecord(rec: {
       tx_hash: String(p.properties.tx_hash),
       payment_id: p.properties.id ? String(p.properties.id) : null,
       amount: p.properties.amount != null ? String(p.properties.amount) : null,
+      asset: p.properties.asset != null ? String(p.properties.asset) : "USDC",
+      decimals:
+        p.properties.decimals != null ? Number(p.properties.decimals) : null,
     }));
 
   const caps = [

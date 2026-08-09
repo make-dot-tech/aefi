@@ -1,4 +1,5 @@
 import type { ProviderResult } from "../lib/types";
+import { formatAssetAmount } from "../lib/money";
 import { providerLabel, shortProviderId } from "../lib/labels";
 import { ExplorerLink } from "./ExplorerLink";
 import { Modal } from "./Modal";
@@ -122,6 +123,14 @@ export function ProviderDetail({
           <p className="mono muted">
             <ExplorerLink value={settlement.tx_hash} kind="tx" compact={false} />
           </p>
+          {settlement.amount ? (
+            <p className="muted">
+              {formatAssetAmount(settlement.amount, {
+                asset: settlement.asset ?? "USDC",
+                decimals: settlement.decimals,
+              })}
+            </p>
+          ) : null}
           <button
             type="button"
             className="btn btn-primary"

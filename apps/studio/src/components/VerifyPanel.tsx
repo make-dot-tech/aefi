@@ -1,4 +1,5 @@
 import type { AefiEnvelope, VerifyResult } from "../lib/types";
+import { formatAssetAmount } from "../lib/money";
 import { ExplorerLink } from "./ExplorerLink";
 import { LinkedText } from "./LinkedText";
 import { Spinner } from "./Spinner";
@@ -36,7 +37,10 @@ export function VerifyPanel({ envelope, loading, onVerify }: Props) {
           {envelope.result?.payments?.map((p) => (
             <div key={p.payment_id} className="verify-row">
               <span>
-                {p.amount} {p.asset}
+                {formatAssetAmount(p.amount, {
+                  asset: p.asset,
+                  decimals: p.decimals,
+                })}
               </span>
               <span className="mono verify-parties">
                 <ExplorerLink value={p.from} kind="address" />

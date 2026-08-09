@@ -1,4 +1,5 @@
 import type { ExplainStep } from "../lib/types";
+import { formatAssetAmount } from "../lib/money";
 
 function shortAddr(v?: string): string {
   if (!v) return "—";
@@ -11,12 +12,22 @@ function nodeLabel(step: ExplainStep): { title: string; detail: string } {
     case "settlement":
       return {
         title: "Settlement",
-        detail: `${shortAddr(step.from)} → ${shortAddr(step.to)}`,
+        detail: step.value
+          ? formatAssetAmount(step.value, {
+              asset: step.asset ?? "USDC",
+              decimals: step.decimals,
+            })
+          : `${shortAddr(step.from)} → ${shortAddr(step.to)}`,
       };
     case "payment":
       return {
         title: "Payment",
-        detail: step.amount ? `${step.amount} atomic` : shortAddr(step.payment_id),
+        detail: step.amount
+          ? formatAssetAmount(step.amount, {
+              asset: step.asset ?? "USDC",
+              decimals: step.decimals,
+            })
+          : shortAddr(step.payment_id),
       };
     case "memo":
       return {

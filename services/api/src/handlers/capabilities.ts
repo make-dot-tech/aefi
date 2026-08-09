@@ -5,6 +5,7 @@ import {
 } from "../disposition/composer.js";
 import { composeDisposition } from "../disposition/client.js";
 import type { AefiEnvelope, EvidenceRef } from "../lib/envelope.js";
+import { formatAssetAmount } from "../lib/money.js";
 import {
   explainTx,
   findAgentActivity,
@@ -20,6 +21,11 @@ import {
   type ProviderSearchFilters,
 } from "../graph/providers.js";
 
+function paymentDecimals(view: PaymentView): number | string | null {
+  return (view.payment.decimals as number | string | null | undefined) ??
+    (view.transfer?.decimals as number | string | null | undefined) ??
+    null;
+}
 /** Compact labels for summaries so long agent:wallet ids don't blow mobile UI. */
 function shortProviderLabel(
   displayName: string | null | undefined,
@@ -80,16 +86,23 @@ function factsFromPayment(view: PaymentView): Fact[] {
 }
 
 function paymentSummary(view: PaymentView): string {
-  const amount = view.payment.amount ?? view.transfer?.value ?? "?";
+  const rawAmount = view.payment.amount ?? view.transfer?.value ?? "?";
   const from = view.fromWallet?.address ?? "?";
   const to = view.toWallet?.address ?? "?";
-  const asset = view.payment.asset ?? "USDC";
+  const asset = String(view.payment.asset ?? "USDC");
+  const amount =
+    rawAmount === "?"
+      ? "?"
+      : formatAssetAmount(String(rawAmount), {
+          asset,
+          decimals: paymentDecimals(view),
+        });
   const jobBit =
     view.jobs.length > 0
       ? ` Linked job(s): ${view.jobs.map((j) => j.job_id ?? j.id).join(", ")}.`
       : "";
   const memoBit = view.memos.length > 0 ? ` Annotated by ${view.memos.length} memo(s).` : "";
-  return `${asset} payment settled: ${amount} from ${from} to ${to}.${memoBit}${jobBit}`;
+  return `${amount} settled from ${from} to ${to}.${memoBit}${jobBit}`;
 }
 
 export async function verifyPayment(input: {
@@ -166,7 +179,8 @@ export async function verifyPayment(input: {
           payment_id: v.payment.id,
           tx_hash: v.payment.tx_hash,
           amount: v.payment.amount,
-          asset: v.payment.asset,
+          asset: v.payment.asset ?? "USDC",
+          decimals: paymentDecimals(v),
           from: v.fromWallet?.address ?? null,
           to: v.toWallet?.address ?? null,
           transfer_id: v.transfer?.id ?? null,
@@ -218,6 +232,8 @@ export async function explainTransaction(hash: string): Promise<AefiEnvelope> {
       from: t.from,
       to: t.to,
       value: t.value,
+      decimals: t.decimals ?? null,
+      asset: "USDC",
     })),
     ...view.memos.map((m) => ({
       step: "memo",
@@ -230,6 +246,8 @@ export async function explainTransaction(hash: string): Promise<AefiEnvelope> {
       from: p.fromWallet?.address,
       to: p.toWallet?.address,
       amount: p.payment.amount,
+      asset: p.payment.asset ?? "USDC",
+      decimals: paymentDecimals(p),
     })),
     ...view.jobs.map((j) => ({
       step: "job",
