@@ -1,5 +1,6 @@
 import type { AefiEnvelope, VerifyResult } from "../lib/types";
 import { ExplorerLink } from "./ExplorerLink";
+import { LinkedText } from "./LinkedText";
 import { Spinner } from "./Spinner";
 
 interface Props {
@@ -29,7 +30,9 @@ export function VerifyPanel({ envelope, loading, onVerify }: Props) {
           >
             {envelope.result?.verified ? "verified" : "not verified"}
           </p>
-          <p className="verify-summary">{envelope.summary}</p>
+          <p className="verify-summary">
+            <LinkedText text={envelope.summary} />
+          </p>
           {envelope.result?.payments?.map((p) => (
             <div key={p.payment_id} className="verify-row">
               <span>

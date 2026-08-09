@@ -1,4 +1,5 @@
 import type { AefiEnvelope } from "../lib/types";
+import { LinkedText } from "./LinkedText";
 
 interface Props {
   envelope: AefiEnvelope;
@@ -15,7 +16,9 @@ export function ConfidencePanel({ envelope }: Props) {
           coverage · {envelope.coverage.status}
         </span>
       </div>
-      <p className="confidence-summary">{envelope.summary}</p>
+      <p className="confidence-summary">
+        <LinkedText text={envelope.summary} />
+      </p>
       <div className="chip-row" aria-label="Reason codes">
         {envelope.confidence_reasons.map((r) => (
           <span key={r} className="chip chip-reason">
