@@ -61,6 +61,8 @@ export function App() {
         setScenarios(list);
         const canLive = health.reachable && health.neo4j === "ok";
         setLiveOk(canLive);
+        // Navbar pill follows graph connectivity, not whether a search has run.
+        setMode(canLive ? "live" : "offline");
         toast.push(
           "info",
           canLive
@@ -100,7 +102,6 @@ export function App() {
       }
     } catch (e) {
       setSearch(null);
-      setMode("offline");
       toast.push(
         "error",
         e instanceof Error ? e.message : "Search failed",
