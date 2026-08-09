@@ -2,6 +2,8 @@ import { useEffect, useId, useRef, type ReactNode } from "react";
 
 /** Depth of open modals — Escape / body lock only apply to the topmost. */
 let modalStack = 0;
+/** Overflow captured when the first modal opens; restored when the last closes. */
+let savedBodyOverflow: string | null = null;
 
 interface Props {
   title: string;
@@ -27,11 +29,15 @@ export function Modal({
 }: Props) {
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
+    if (modalStack === 0) {
+      savedBodyOverflow = document.body.style.overflow;
+    }
     modalStack += 1;
     const depth = modalStack;
-    const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     closeRef.current?.focus();
 
@@ -39,22 +45,27 @@ export function Modal({
       if (e.key !== "Escape") return;
       if (depth !== modalStack) return;
       e.stopPropagation();
-      onClose();
+      onCloseRef.current();
     }
     window.addEventListener("keydown", onKey);
     return () => {
       modalStack -= 1;
       window.removeEventListener("keydown", onKey);
-      if (modalStack === 0) document.body.style.overflow = prev;
+      if (modalStack === 0) {
+        document.body.style.overflow = savedBodyOverflow ?? "";
+        savedBodyOverflow = null;
+      }
     };
-  }, [onClose]);
+    // Mount/unmount only — onClose is read via ref so stacked modals don't
+    // recapture overflow:hidden and leave the page stuck after close.
+  }, []);
 
   return (
     <div
       className={`modal-root${elevated ? " is-elevated" : ""}`}
       role="presentation"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) onCloseRef.current();
       }}
     >
       <div
@@ -74,7 +85,7 @@ export function Modal({
             ref={closeRef}
             type="button"
             className="drawer-close"
-            onClick={onClose}
+            onClick={() => onCloseRef.current()}
           >
             close
           </button>
