@@ -120,8 +120,8 @@ export function ProviderDetail({
           <p className="muted">
             Drill into a settlement that supports this provider score.
           </p>
-          <p className="mono muted">
-            <ExplorerLink value={settlement.tx_hash} kind="tx" compact={false} />
+          <p className="mono muted truncate-line">
+            <ExplorerLink value={settlement.tx_hash} kind="tx" />
           </p>
           {settlement.amount ? (
             <p className="muted">

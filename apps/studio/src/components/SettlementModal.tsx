@@ -45,7 +45,7 @@ export function SettlementModal({
       onClose={onClose}
       subtitle={
         explainHash ? (
-          <ExplorerLink value={explainHash} kind="tx" compact={false} />
+          <ExplorerLink value={explainHash} kind="tx" />
         ) : null
       }
     >
