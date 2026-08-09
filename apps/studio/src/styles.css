@@ -479,6 +479,28 @@ main {
   color: var(--mint);
 }
 
+.chip-skill {
+  background: rgba(154, 171, 188, 0.12);
+  color: var(--paper);
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
+  max-width: 100%;
+}
+
+.identity-block {
+  margin: 0.85rem 0 0.25rem;
+  min-width: 0;
+}
+
+.identity-blurb {
+  margin: 0 0 0.65rem;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--paper);
+  overflow-wrap: anywhere;
+}
+
 .chip-gap {
   background: var(--copper-dim);
   color: var(--copper);

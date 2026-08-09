@@ -69,6 +69,7 @@ export interface EvidenceDistribution {
 export interface ProviderResult {
   provider_id: string;
   display_name: string | null;
+  blurb?: string | null;
   wallet: string | null;
   capabilities: string[];
   performance: {

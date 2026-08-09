@@ -22,6 +22,7 @@ export interface EvidenceDistribution {
 export interface ProviderPerformance {
   provider_id: string;
   display_name: string | null;
+  blurb: string | null;
   wallet: string | null;
   capabilities: string[];
   performance: {
@@ -237,6 +238,14 @@ function mapRecord(rec: {
     ...asStringList(agent.capabilities),
     ...asStringList(agent.capability),
   ];
+  const seenCaps = new Set<string>();
+  const uniqueCaps: string[] = [];
+  for (const c of caps) {
+    const key = c.toLowerCase();
+    if (seenCaps.has(key)) continue;
+    seenCaps.add(key);
+    uniqueCaps.push(c);
+  }
 
   return {
     provider_id: String(agent.id),
@@ -245,12 +254,17 @@ function mapRecord(rec: {
       : agent.name
         ? String(agent.name)
         : null,
+    blurb: agent.blurb
+      ? String(agent.blurb)
+      : agent.description
+        ? String(agent.description)
+        : null,
     wallet: wallet?.address
       ? String(wallet.address)
       : agent.wallet
         ? String(agent.wallet)
         : null,
-    capabilities: [...new Set(caps.map((c) => c.toLowerCase()))],
+    capabilities: uniqueCaps,
     performance: {
       verified_jobs,
       completed_jobs,

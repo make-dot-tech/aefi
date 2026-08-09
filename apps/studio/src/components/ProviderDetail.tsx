@@ -44,6 +44,26 @@ export function ProviderDetail({
         </p>
       ) : null}
 
+      {provider.blurb || provider.capabilities.length ? (
+        <section className="identity-block" aria-label="Registered identity">
+          <h3 className="drawer-sub">Registered identity</h3>
+          {provider.blurb ? (
+            <p className="identity-blurb">{provider.blurb}</p>
+          ) : null}
+          {provider.capabilities.length ? (
+            <div className="chip-row" aria-label="Skills">
+              {provider.capabilities.map((c) => (
+                <span key={c} className="chip chip-skill">
+                  {c}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="muted">No skills published on this agent card.</p>
+          )}
+        </section>
+      ) : null}
+
       <div className="detail-stats">
         <div>
           <span className="metric-label">completion</span>

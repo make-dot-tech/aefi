@@ -580,6 +580,7 @@ export async function searchProviders(body: unknown = {}): Promise<AefiEnvelope>
         results: providers.map((p) => ({
           provider_id: p.provider_id,
           display_name: p.display_name,
+          blurb: p.blurb,
           wallet: p.wallet,
           capabilities: p.capabilities,
           performance: p.performance,
