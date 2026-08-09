@@ -20,6 +20,25 @@ import {
   type ProviderSearchFilters,
 } from "../graph/providers.js";
 
+/** Compact labels for summaries so long agent:wallet ids don't blow mobile UI. */
+function shortProviderLabel(
+  displayName: string | null | undefined,
+  providerId: string,
+): string {
+  if (displayName?.trim()) return displayName.trim();
+  const wallet = providerId.match(/^agent:wallet:\d+:(0x[a-fA-F0-9]+)$/i);
+  if (wallet) {
+    const addr = wallet[1]!;
+    return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+  }
+  const erc = providerId.match(/^agent:erc8004:\d+:(.+)$/i);
+  if (erc) return `agent #${erc[1]}`;
+  if (providerId.length > 28) {
+    return `${providerId.slice(0, 14)}…${providerId.slice(-6)}`;
+  }
+  return providerId;
+}
+
 function evidenceRefs(rows: Array<Record<string, unknown>>): EvidenceRef[] {
   return rows.map((e) => ({
     evidence_id: String(e.id ?? e.reference ?? "unknown"),
@@ -530,9 +549,11 @@ export async function searchProviders(body: unknown = {}): Promise<AefiEnvelope>
     ? ` Intent: “${filters.query}”.`
     : "";
 
+  const topLabel = shortProviderLabel(top.display_name, top.provider_id);
+
   return {
     ...envelopeFromDisposition(
-      `Found ${providers.length} provider(s). Top match: ${top.display_name ?? top.provider_id} (${(top.performance.completion_rate * 100).toFixed(1)}% completion across ${top.performance.verified_jobs} jobs).${queryBit}`,
+      `Found ${providers.length} provider(s). Top match: ${topLabel} (${(top.performance.completion_rate * 100).toFixed(1)}% completion across ${top.performance.verified_jobs} jobs).${queryBit}`,
       {
         interpreted_filters: {
           ...filters,
@@ -630,7 +651,7 @@ export async function getProvider(providerId: string): Promise<AefiEnvelope> {
 
   return {
     ...envelopeFromDisposition(
-      `${view.display_name ?? view.provider_id}: ${view.performance.verified_jobs} verified jobs, ${(view.performance.completion_rate * 100).toFixed(1)}% completion, confidence ${view.performance.confidence}.`,
+      `${shortProviderLabel(view.display_name, view.provider_id)}: ${view.performance.verified_jobs} verified jobs, ${(view.performance.completion_rate * 100).toFixed(1)}% completion, confidence ${view.performance.confidence}.`,
       { found: true, ...view },
       disposition,
       {

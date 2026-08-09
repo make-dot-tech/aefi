@@ -1,6 +1,17 @@
 /** Curated NL search presets grounded in Arc testnet agent activity. */
 export const SEARCH_SCENARIOS = [
   {
+    id: "completed-providers",
+    label: "Completed jobs",
+    blurb: "Providers with at least one completed ERC-8183 job on Arc testnet.",
+    filters: {
+      query: "providers with completed jobs and settlement evidence",
+      minimum_verified_jobs: 1,
+      minimum_completion_rate: 0,
+      minimum_confidence: "unverified" as const,
+    },
+  },
+  {
     id: "gateway-treasury",
     label: "Gateway treasury",
     blurb: "Gateway liquidity / treasury ops agents from live registrations.",
@@ -18,17 +29,6 @@ export const SEARCH_SCENARIOS = [
     filters: {
       query: "CCTP cross-chain settlement attestation tracker on Arc",
       minimum_verified_jobs: 0,
-      minimum_completion_rate: 0,
-      minimum_confidence: "unverified" as const,
-    },
-  },
-  {
-    id: "completed-providers",
-    label: "Completed jobs",
-    blurb: "Providers with at least one completed ERC-8183 job on Arc testnet.",
-    filters: {
-      query: "providers with completed jobs and settlement evidence",
-      minimum_verified_jobs: 1,
       minimum_completion_rate: 0,
       minimum_confidence: "unverified" as const,
     },
