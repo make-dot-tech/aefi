@@ -158,16 +158,29 @@ export class EventStore {
   }
 }
 
+function tryParseJson(value: unknown): unknown {
+  if (value === null || value === undefined) return value;
+  if (typeof value !== "string") return value;
+  const s = value.trim();
+  if (!s) return value;
+  // Hex / opaque chain bytes (memo payload) are not JSON.
+  if (s.startsWith("0x") || s.startsWith("0X")) return value;
+  const head = s[0];
+  if (head !== "{" && head !== "[" && head !== '"' && head !== "t" && head !== "f" && head !== "n" && !(head >= "0" && head <= "9") && head !== "-") {
+    return value;
+  }
+  try {
+    return JSON.parse(s);
+  } catch {
+    return value;
+  }
+}
+
 function normalizeDecoded<T extends { decoded: unknown; payload?: unknown }>(
   row: T,
 ): T {
-  const decoded =
-    typeof row.decoded === "string" ? JSON.parse(row.decoded) : row.decoded ?? {};
+  const decoded = tryParseJson(row.decoded) ?? {};
   const payload =
-    row.payload === undefined
-      ? undefined
-      : typeof row.payload === "string"
-        ? JSON.parse(row.payload)
-        : row.payload;
+    row.payload === undefined ? undefined : tryParseJson(row.payload);
   return { ...row, decoded, ...(payload !== undefined ? { payload } : {}) };
 }

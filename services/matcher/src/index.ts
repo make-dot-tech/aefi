@@ -38,9 +38,13 @@ async function main() {
 
     console.log("polling for new events…");
     for (;;) {
-      const result = await projectOnce(events, graph, cfg.batchSize);
-      if (result.advanced) {
-        console.log("projected", result);
+      try {
+        const result = await projectOnce(events, graph, cfg.batchSize);
+        if (result.advanced) {
+          console.log("projected", result);
+        }
+      } catch (err) {
+        console.error("projectOnce failed; will retry", err);
       }
       await sleep(cfg.pollMs);
     }
