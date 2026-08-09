@@ -1075,6 +1075,15 @@ main {
   display: grid;
   gap: 0.65rem;
   justify-items: start;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.detail-cta .mono,
+.detail-cta .explorer-link {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-all;
 }
 
 .gap-note {
