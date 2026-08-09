@@ -130,6 +130,8 @@ main {
 }
 
 .hero {
+  position: relative;
+  z-index: 5;
   padding: clamp(2rem, 8vh, 5rem) 0 1.5rem;
   animation: rise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
   transition: padding 0.4s ease;
@@ -291,6 +293,8 @@ main {
 }
 
 .result {
+  position: relative;
+  z-index: 1;
   margin-top: 1.5rem;
   animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
@@ -955,7 +959,7 @@ main {
   position: absolute;
   right: 0;
   top: calc(100% + 0.35rem);
-  z-index: 20;
+  z-index: 100;
   width: min(22rem, 78vw);
   margin: 0;
   padding: 0.35rem;
