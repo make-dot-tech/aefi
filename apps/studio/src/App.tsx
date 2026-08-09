@@ -145,13 +145,13 @@ export function App() {
       toast.push(
         envelope.result?.verified ? "success" : "info",
         envelope.result?.verified
-          ? "Payment verified against evidence graph"
-          : "Payment not verified",
+          ? "Payment found in evidence graph"
+          : "Payment not found in evidence graph",
       );
     } catch (e) {
       toast.push(
         "error",
-        e instanceof Error ? e.message : "Verify failed",
+        e instanceof Error ? e.message : "Lookup failed",
       );
     } finally {
       setVerifyBusy(false);

@@ -12,16 +12,16 @@ interface Props {
 
 export function VerifyPanel({ envelope, loading, onVerify }: Props) {
   return (
-    <section className="verify" aria-label="Verify payment">
+    <section className="verify" aria-label="Lookup payment">
       <div className="verify-head">
-        <h2>Verify payment</h2>
+        <h2>Lookup payment</h2>
         <button
           type="button"
           className="btn btn-ghost"
           onClick={onVerify}
           disabled={loading}
         >
-          {loading ? <Spinner size="sm" label="Verifying" /> : "Verify"}
+          {loading ? <Spinner size="sm" label="Looking up" /> : "Lookup"}
         </button>
       </div>
       {envelope ? (
@@ -29,7 +29,7 @@ export function VerifyPanel({ envelope, loading, onVerify }: Props) {
           <p
             className={`verify-flag ${envelope.result?.verified ? "is-ok" : "is-no"}`}
           >
-            {envelope.result?.verified ? "verified" : "not verified"}
+            {envelope.result?.verified ? "found in graph" : "not in graph"}
           </p>
           <p className="verify-summary">
             <LinkedText text={envelope.summary} />
@@ -54,7 +54,7 @@ export function VerifyPanel({ envelope, loading, onVerify }: Props) {
           ))}
         </div>
       ) : (
-        <p className="muted">Confirm settlement against the evidence graph.</p>
+        <p className="muted">Look up this settlement in the evidence graph.</p>
       )}
     </section>
   );
