@@ -28,6 +28,8 @@ export function correlateErc8004(rows: Erc8004Row[]): ProjectionBatch {
       registry: row.registry,
       last_event: row.event_kind,
       identity_source: "erc_8004",
+      last_tx: row.tx_hash,
+      last_block: Number(row.block_number),
     };
 
     if (row.event_kind === "Registered") {
@@ -41,6 +43,10 @@ export function correlateErc8004(rows: Erc8004Row[]): ProjectionBatch {
       if (typeof row.payload?.agentURI === "string") {
         props.agent_uri = row.payload.agentURI.slice(0, 500);
       }
+      props.registered_tx = row.tx_hash;
+      props.registered_block = Number(row.block_number);
+      const owner = extractOwner(row);
+      if (owner) props.owner = owner;
     }
 
     batch.nodes.push({
@@ -144,6 +150,17 @@ function extractAgentWallet(row: Erc8004Row): string | null {
       if (hex.length >= 40) {
         return `0x${hex.slice(-40)}`;
       }
+    }
+  }
+  return null;
+}
+
+function extractOwner(row: Erc8004Row): string | null {
+  const p = row.payload ?? {};
+  for (const key of ["owner", "agentOwner", "creator"]) {
+    const v = p[key];
+    if (typeof v === "string" && /^0x[a-fA-F0-9]{40}$/.test(v)) {
+      return v.toLowerCase();
     }
   }
   return null;

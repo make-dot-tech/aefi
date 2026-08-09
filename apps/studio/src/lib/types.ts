@@ -72,6 +72,22 @@ export interface ProviderResult {
   blurb?: string | null;
   wallet: string | null;
   capabilities: string[];
+  identity?: {
+    agent_id: string | null;
+    chain_id: string | null;
+    network: string | null;
+    registry: string | null;
+    owner: string | null;
+    creator: string | null;
+    registered_tx: string | null;
+    registered_block: number | null;
+    last_tx: string | null;
+    last_block: number | null;
+    last_event: string | null;
+    identity_source: string | null;
+    role: string | null;
+    status: "configured" | "unconfigured";
+  };
   performance: {
     verified_jobs: number;
     completed_jobs: number;

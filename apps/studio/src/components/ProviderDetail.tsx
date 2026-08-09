@@ -1,3 +1,4 @@
+import { useState, type ReactNode } from "react";
 import type { ProviderResult } from "../lib/types";
 import { formatAssetAmount } from "../lib/money";
 import { providerLabel, shortProviderId } from "../lib/labels";
@@ -16,6 +17,42 @@ function pct(n: number): string {
   return `${(n * 100).toFixed(1)}%`;
 }
 
+function MetaCell({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="agent-meta-cell">
+      <span className="agent-meta-label">{label}</span>
+      <div className="agent-meta-value">{children}</div>
+    </div>
+  );
+}
+
+function HexOrDash({
+  value,
+  kind,
+  chainId,
+}: {
+  value: string | null | undefined;
+  kind: "address" | "tx";
+  chainId?: string | null;
+}) {
+  if (!value) return <span className="muted">—</span>;
+  return (
+    <ExplorerLink
+      value={value}
+      kind={kind}
+      chainId={chainId}
+      compact
+      className="mono"
+    />
+  );
+}
+
 export function ProviderDetail({
   provider,
   onExplain,
@@ -25,6 +62,14 @@ export function ProviderDetail({
   const p = provider.performance;
   const settlement = provider.sample_settlements[0];
   const title = providerLabel(provider);
+  const id = provider.identity;
+  const chainId = id?.chain_id ?? null;
+  const [identityOpen, setIdentityOpen] = useState(false);
+  const hasIdentityCard =
+    Boolean(provider.blurb) || provider.capabilities.length > 0;
+
+  const agentNum = id?.agent_id ?? shortProviderId(provider.provider_id);
+  const status = id?.status ?? "unconfigured";
 
   return (
     <Modal
@@ -33,34 +78,88 @@ export function ProviderDetail({
       onClose={onClose}
       size="md"
       subtitle={
-        <span className="provider-id mono" title={provider.provider_id}>
-          {shortProviderId(provider.provider_id)}
-        </span>
+        <div className="agent-header-meta">
+          <span className="provider-id mono" title={provider.provider_id}>
+            agent #{agentNum}
+          </span>
+          <span className={`agent-status is-${status}`}>{status}</span>
+          {id?.network ? (
+            <span className="agent-network-badge">{id.network}</span>
+          ) : null}
+        </div>
       }
     >
-      {provider.wallet ? (
-        <p className="mono muted truncate-line">
-          <ExplorerLink value={provider.wallet} kind="address" />
-        </p>
-      ) : null}
+      <div className="agent-meta-grid" aria-label="Agent registry details">
+        <MetaCell label="Agent ID">{agentNum}</MetaCell>
+        <MetaCell label="Network">{id?.network ?? "—"}</MetaCell>
+        <MetaCell label="Owner">
+          <HexOrDash value={id?.owner} kind="address" chainId={chainId} />
+        </MetaCell>
+        <MetaCell label="Agent wallet">
+          <HexOrDash
+            value={provider.wallet}
+            kind="address"
+            chainId={chainId}
+          />
+        </MetaCell>
+        <MetaCell label="Creator">
+          <HexOrDash value={id?.creator} kind="address" chainId={chainId} />
+        </MetaCell>
+        <MetaCell label="Created tx">
+          <HexOrDash
+            value={id?.registered_tx}
+            kind="tx"
+            chainId={chainId}
+          />
+        </MetaCell>
+        <MetaCell label="Registry">
+          <HexOrDash value={id?.registry} kind="address" chainId={chainId} />
+        </MetaCell>
+        <MetaCell label="Last event">{id?.last_event ?? "—"}</MetaCell>
+        <MetaCell label="Last activity tx">
+          <HexOrDash value={id?.last_tx} kind="tx" chainId={chainId} />
+        </MetaCell>
+        <MetaCell label="Registration block">
+          {id?.registered_block != null
+            ? id.registered_block.toLocaleString()
+            : "—"}
+        </MetaCell>
+      </div>
 
-      {provider.blurb || provider.capabilities.length ? (
+      {hasIdentityCard ? (
         <section className="identity-block" aria-label="Registered identity">
-          <h3 className="drawer-sub">Registered identity</h3>
-          {provider.blurb ? (
-            <p className="identity-blurb">{provider.blurb}</p>
-          ) : null}
-          {provider.capabilities.length ? (
-            <div className="chip-row" aria-label="Skills">
-              {provider.capabilities.map((c) => (
-                <span key={c} className="chip chip-skill">
-                  {c}
-                </span>
-              ))}
+          <button
+            type="button"
+            className="identity-toggle"
+            aria-expanded={identityOpen}
+            onClick={() => setIdentityOpen((v) => !v)}
+          >
+            <span>Registered identity</span>
+            <span className="identity-toggle-hint">
+              {identityOpen ? "Hide" : "Show"}
+              {provider.capabilities.length
+                ? ` · ${provider.capabilities.length} skills`
+                : ""}
+            </span>
+          </button>
+          {identityOpen ? (
+            <div className="identity-body">
+              {provider.blurb ? (
+                <p className="identity-blurb">{provider.blurb}</p>
+              ) : null}
+              {provider.capabilities.length ? (
+                <div className="chip-row" aria-label="Skills">
+                  {provider.capabilities.map((c) => (
+                    <span key={c} className="chip chip-skill">
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="muted">No skills published on this agent card.</p>
+              )}
             </div>
-          ) : (
-            <p className="muted">No skills published on this agent card.</p>
-          )}
+          ) : null}
         </section>
       ) : null}
 

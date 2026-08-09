@@ -583,6 +583,7 @@ export async function searchProviders(body: unknown = {}): Promise<AefiEnvelope>
           blurb: p.blurb,
           wallet: p.wallet,
           capabilities: p.capabilities,
+          identity: p.identity,
           performance: p.performance,
           ranking_explanation: p.ranking_explanation,
           score: p.score,

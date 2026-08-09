@@ -25,6 +25,22 @@ export interface ProviderPerformance {
   blurb: string | null;
   wallet: string | null;
   capabilities: string[];
+  identity: {
+    agent_id: string | null;
+    chain_id: string | null;
+    network: string | null;
+    registry: string | null;
+    owner: string | null;
+    creator: string | null;
+    registered_tx: string | null;
+    registered_block: number | null;
+    last_tx: string | null;
+    last_block: number | null;
+    last_event: string | null;
+    identity_source: string | null;
+    role: string | null;
+    status: "configured" | "unconfigured";
+  };
   performance: {
     verified_jobs: number;
     completed_jobs: number;
@@ -164,6 +180,64 @@ export function deriveConfidence(input: {
 
 const CONF_RANK = { high: 3, medium: 2, low: 1, unverified: 0 } as const;
 
+const NETWORK_LABELS: Record<string, string> = {
+  "5042002": "Arc Testnet",
+};
+
+function asOptionalString(v: unknown): string | null {
+  if (v == null || v === "") return null;
+  return String(v);
+}
+
+function asOptionalNumber(v: unknown): number | null {
+  if (v == null || v === "") return null;
+  const n = typeof v === "object" && v !== null && "toNumber" in v
+    ? Number((v as { toNumber: () => number }).toNumber())
+    : Number(v);
+  return Number.isFinite(n) ? n : null;
+}
+
+function deriveAgentId(
+  providerId: string,
+  agent: Record<string, unknown>,
+): string | null {
+  const fromProp = asOptionalString(agent.agent_id);
+  if (fromProp) return fromProp;
+  const m = providerId.match(/^agent:erc8004:\d+:(.+)$/i);
+  return m?.[1] ?? null;
+}
+
+function deriveIdentity(
+  providerId: string,
+  agent: Record<string, unknown>,
+  wallet: string | null,
+  capabilities: string[],
+): ProviderPerformance["identity"] {
+  const chainId = asOptionalString(agent.chain_id);
+  const hasCard =
+    Boolean(asOptionalString(agent.blurb) || asOptionalString(agent.display_name)) ||
+    capabilities.length > 0 ||
+    Boolean(asOptionalString(agent.agent_uri));
+  const owner = asOptionalString(agent.owner);
+  const creator = asOptionalString(agent.creator) ?? owner;
+  return {
+    agent_id: deriveAgentId(providerId, agent),
+    chain_id: chainId,
+    network: chainId ? NETWORK_LABELS[chainId] ?? `Chain ${chainId}` : null,
+    registry: asOptionalString(agent.registry),
+    owner,
+    creator,
+    registered_tx: asOptionalString(agent.registered_tx),
+    registered_block: asOptionalNumber(agent.registered_block),
+    last_tx: asOptionalString(agent.last_tx),
+    last_block: asOptionalNumber(agent.last_block),
+    last_event: asOptionalString(agent.last_event),
+    identity_source: asOptionalString(agent.identity_source),
+    role: asOptionalString(agent.role),
+    status: hasCard || wallet ? "configured" : "unconfigured",
+  };
+}
+
 function mapRecord(rec: {
   get: (key: string) => unknown;
 }): ProviderPerformance | null {
@@ -247,6 +321,12 @@ function mapRecord(rec: {
     uniqueCaps.push(c);
   }
 
+  const walletAddr = wallet?.address
+    ? String(wallet.address)
+    : agent.wallet
+      ? String(agent.wallet)
+      : null;
+
   return {
     provider_id: String(agent.id),
     display_name: agent.display_name
@@ -259,12 +339,9 @@ function mapRecord(rec: {
       : agent.description
         ? String(agent.description)
         : null,
-    wallet: wallet?.address
-      ? String(wallet.address)
-      : agent.wallet
-        ? String(agent.wallet)
-        : null,
+    wallet: walletAddr,
     capabilities: uniqueCaps,
+    identity: deriveIdentity(String(agent.id), agent, walletAddr, uniqueCaps),
     performance: {
       verified_jobs,
       completed_jobs,
