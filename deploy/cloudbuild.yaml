@@ -85,6 +85,8 @@ steps:
       - deploy/Dockerfile.studio
       - --build-arg
       - VITE_AEFI_API_URL=${_VITE_AEFI_API_URL}
+      - --build-arg
+      - VITE_ARC_CHAIN_ID=${_CHAIN_ID}
       - -t
       - ${_REGION}-docker.pkg.dev/$PROJECT_ID/aefi/studio:$BUILD_ID
       - -t

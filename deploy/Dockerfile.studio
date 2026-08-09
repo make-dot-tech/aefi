@@ -22,8 +22,10 @@ COPY assets/aefi-icon.png assets/aefi-logo.png ./apps/studio/public/brand/
 
 ARG VITE_AEFI_API_URL=https://api.aefi.io
 ARG VITE_AEFI_API_KEY=
+ARG VITE_ARC_CHAIN_ID=5042002
 ENV VITE_AEFI_API_URL=$VITE_AEFI_API_URL
 ENV VITE_AEFI_API_KEY=$VITE_AEFI_API_KEY
+ENV VITE_ARC_CHAIN_ID=$VITE_ARC_CHAIN_ID
 
 WORKDIR /app/apps/studio
 RUN pnpm build

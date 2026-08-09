@@ -1,16 +1,11 @@
 import type { AefiEnvelope, VerifyResult } from "../lib/types";
+import { ExplorerLink } from "./ExplorerLink";
 import { Spinner } from "./Spinner";
 
 interface Props {
   envelope: AefiEnvelope<VerifyResult> | null;
   loading: boolean;
   onVerify: () => void;
-}
-
-function short(v: string | null | undefined): string {
-  if (!v) return "—";
-  if (v.length < 14) return v;
-  return `${v.slice(0, 8)}…${v.slice(-4)}`;
 }
 
 export function VerifyPanel({ envelope, loading, onVerify }: Props) {
@@ -40,9 +35,14 @@ export function VerifyPanel({ envelope, loading, onVerify }: Props) {
               <span>
                 {p.amount} {p.asset}
               </span>
-              <span className="mono">
-                {short(p.from)} → {short(p.to)}
+              <span className="mono verify-parties">
+                <ExplorerLink value={p.from} kind="address" />
+                <span aria-hidden="true"> → </span>
+                <ExplorerLink value={p.to} kind="address" />
               </span>
+              {p.tx_hash ? (
+                <ExplorerLink value={p.tx_hash} kind="tx" className="mono" />
+              ) : null}
             </div>
           ))}
         </div>

@@ -1,4 +1,6 @@
 import type { EvidenceRef, ExplainStep } from "../lib/types";
+import { looksLikeAddress, looksLikeTxHash } from "../lib/explorer";
+import { ExplorerLink } from "./ExplorerLink";
 
 interface Props {
   step: ExplainStep | null;
@@ -6,7 +8,10 @@ interface Props {
   onClose: () => void;
 }
 
-function stepEvidence(step: ExplainStep | null, evidence: EvidenceRef[]): EvidenceRef[] {
+function stepEvidence(
+  step: ExplainStep | null,
+  evidence: EvidenceRef[],
+): EvidenceRef[] {
   if (!step) return [];
   const keys = [
     step.payment_id,
@@ -21,6 +26,24 @@ function stepEvidence(step: ExplainStep | null, evidence: EvidenceRef[]): Eviden
       e.supports?.some((s) => keys.some((k) => s.includes(k))),
   );
   return matched.length ? matched : evidence.slice(0, 1);
+}
+
+function FactValue({ name, value }: { name: string; value: string }) {
+  const key = name.toLowerCase();
+  if (key.includes("tx") || key === "tx_hash" || looksLikeTxHash(value)) {
+    return <ExplorerLink value={value} kind="tx" compact={false} />;
+  }
+  if (
+    key === "from" ||
+    key === "to" ||
+    key === "sender" ||
+    key.includes("addr") ||
+    key.includes("wallet") ||
+    looksLikeAddress(value)
+  ) {
+    return <ExplorerLink value={value} kind="address" compact={false} />;
+  }
+  return <>{value}</>;
 }
 
 export function EvidenceDrawer({ step, evidence, onClose }: Props) {
@@ -41,7 +64,9 @@ export function EvidenceDrawer({ step, evidence, onClose }: Props) {
           .map(([k, v]) => (
             <div key={k}>
               <dt>{k}</dt>
-              <dd>{String(v)}</dd>
+              <dd>
+                <FactValue name={k} value={String(v)} />
+              </dd>
             </div>
           ))}
       </dl>
@@ -51,7 +76,17 @@ export function EvidenceDrawer({ step, evidence, onClose }: Props) {
           <li key={e.evidence_id}>
             <span className="ev-type">{e.type}</span>
             <span className="ev-source">{e.source}</span>
-            <code className="ev-ref">{e.reference}</code>
+            <code className="ev-ref">
+              {looksLikeTxHash(e.reference) || looksLikeAddress(e.reference) ? (
+                <ExplorerLink
+                  value={e.reference}
+                  kind={looksLikeTxHash(e.reference) ? "tx" : "address"}
+                  compact={false}
+                />
+              ) : (
+                e.reference
+              )}
+            </code>
           </li>
         ))}
         {rows.length === 0 ? <li className="muted">No evidence refs.</li> : null}

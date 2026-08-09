@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef } from "react";
 import type { ProviderResult } from "../lib/types";
+import { ExplorerLink } from "./ExplorerLink";
 import { Spinner } from "./Spinner";
 
 interface Props {
@@ -68,7 +69,9 @@ export function ProviderDetail({
         <div className="provider-modal-body">
           <p className="provider-id mono">{provider.provider_id}</p>
           {provider.wallet ? (
-            <p className="mono muted">{provider.wallet}</p>
+            <p className="mono muted">
+              <ExplorerLink value={provider.wallet} kind="address" />
+            </p>
           ) : null}
 
           <div className="detail-stats">
@@ -132,6 +135,9 @@ export function ProviderDetail({
                 <li key={j.job_id}>
                   <span>{j.job_id}</span>
                   <span className="muted">{j.outcome ?? "—"}</span>
+                  {j.tx_hash ? (
+                    <ExplorerLink value={j.tx_hash} kind="tx" className="mono" />
+                  ) : null}
                 </li>
               ))}
             </ul>
@@ -143,6 +149,9 @@ export function ProviderDetail({
             <div className="detail-cta">
               <p className="muted">
                 Drill into a settlement that supports this provider score.
+              </p>
+              <p className="mono muted">
+                <ExplorerLink value={settlement.tx_hash} kind="tx" compact={false} />
               </p>
               <button
                 type="button"

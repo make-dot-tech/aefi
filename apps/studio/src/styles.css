@@ -914,12 +914,39 @@ main {
 }
 
 .job-list li {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.75rem;
+  align-items: center;
   font-size: 0.78rem;
   padding: 0.35rem 0;
   border-bottom: 1px solid rgba(154, 154, 154, 0.12);
+  min-width: 0;
+}
+
+.job-list li > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.explorer-link {
+  color: var(--mint);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: color-mix(in srgb, var(--mint) 45%, transparent);
+}
+
+.explorer-link:hover {
+  color: var(--paper);
+  text-decoration-color: var(--mint);
+}
+
+.verify-parties {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+  align-items: center;
 }
 
 .detail-cta {

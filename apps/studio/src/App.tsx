@@ -16,6 +16,7 @@ import {
   type DataMode,
 } from "./lib/api";
 import { SEARCH_SCENARIOS } from "./lib/scenarios";
+import { ExplorerLink } from "./components/ExplorerLink";
 import type {
   AefiEnvelope,
   DemoScenario,
@@ -407,7 +408,11 @@ export function App() {
         {explain ? (
           <section className="result explain-block" aria-live="polite">
             <h2 className="section-title">Settlement evidence</h2>
-            <p className="mono muted">{explainHash}</p>
+            <p className="mono muted">
+              {explainHash ? (
+                <ExplorerLink value={explainHash} kind="tx" compact={false} />
+              ) : null}
+            </p>
             <EvidencePath
               steps={steps}
               selectedIndex={stepIdx}
