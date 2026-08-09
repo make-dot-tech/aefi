@@ -29,12 +29,8 @@ import type {
 export function App() {
   const toast = useToast();
   const [scenarios, setScenarios] = useState<DemoScenario[]>(SEARCH_SCENARIOS);
-  const [activeScenario, setActiveScenario] = useState<string>(
-    SEARCH_SCENARIOS[0]!.id,
-  );
-  const [filters, setFilters] = useState<ProviderSearchFilters>(
-    SEARCH_SCENARIOS[0]!.filters,
-  );
+  const [activeScenario, setActiveScenario] = useState("");
+  const [filters, setFilters] = useState<ProviderSearchFilters>({ query: "" });
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showPresets, setShowPresets] = useState(false);
   const [liveOk, setLiveOk] = useState(false);
@@ -73,15 +69,6 @@ export function App() {
             ? "Connected to live evidence graph"
             : "API/graph offline — live data unavailable",
         );
-        const first = list[0];
-        if (first && canLive) {
-          setActiveScenario(first.id);
-          setFilters(first.filters);
-          await runSearch(first.filters, { silent: true });
-        } else if (first) {
-          setActiveScenario(first.id);
-          setFilters(first.filters);
-        }
       } finally {
         if (!cancelled) setBooting(false);
       }
