@@ -10,6 +10,21 @@ function pct(n: number): string {
   return `${(n * 100).toFixed(1)}%`;
 }
 
+/** Compact label when display_name is missing (long agent:wallet / erc8004 ids). */
+function providerLabel(p: ProviderResult): string {
+  if (p.display_name?.trim()) return p.display_name.trim();
+  const id = p.provider_id;
+  const wallet = id.match(/^agent:wallet:\d+:(0x[a-fA-F0-9]+)$/);
+  if (wallet) {
+    const addr = wallet[1]!;
+    return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+  }
+  const erc = id.match(/^agent:erc8004:\d+:(.+)$/);
+  if (erc) return `agent #${erc[1]}`;
+  if (id.length > 28) return `${id.slice(0, 14)}…${id.slice(-6)}`;
+  return id;
+}
+
 export function ProviderCards({ providers, selectedId, onSelect }: Props) {
   if (providers.length === 0) {
     return (
@@ -41,8 +56,20 @@ export function ProviderCards({ providers, selectedId, onSelect }: Props) {
                 {p.performance.confidence}
               </span>
             </div>
-            <h3 className="provider-name">{p.display_name ?? p.provider_id}</h3>
-            <p className="provider-caps">{p.capabilities.join(" · ")}</p>
+            <h3
+              className="provider-name"
+              title={p.display_name ?? p.provider_id}
+            >
+              {providerLabel(p)}
+            </h3>
+            <p
+              className="provider-caps"
+              title={p.capabilities.join(" · ") || undefined}
+            >
+              {p.capabilities.length
+                ? p.capabilities.join(" · ")
+                : p.provider_id}
+            </p>
             <div className="metric-row">
               <div>
                 <span className="metric-label">completion</span>

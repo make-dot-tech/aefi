@@ -723,6 +723,8 @@ main {
 }
 
 .provider-card {
+  min-width: 0;
+  overflow: hidden;
   text-align: left;
   padding: 1rem 1.1rem;
   border: 1px solid rgba(154, 154, 154, 0.22);
@@ -746,7 +748,9 @@ main {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 0.5rem;
   margin-bottom: 0.45rem;
+  min-width: 0;
 }
 
 .provider-rank {
@@ -760,12 +764,32 @@ main {
   font-size: 1.15rem;
   font-weight: 500;
   letter-spacing: -0.02em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .provider-caps {
   margin: 0.35rem 0 0.85rem;
   font-size: 0.72rem;
   color: var(--mist);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.provider-card .chip-row {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.provider-card .chip {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .metric-row {
