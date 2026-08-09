@@ -222,8 +222,21 @@ export function App() {
                   className="tx-input intent-input"
                   value={filters.query ?? ""}
                   onChange={(e) => {
+                    const q = e.target.value;
                     setActiveScenario("");
-                    setFilters((f) => ({ ...f, query: e.target.value }));
+                    // Leaving a preset via free-text search must drop its floors
+                    // (e.g. completed-jobs min verified), unless advanced filters
+                    // are open and the user is deliberately composing both.
+                    setFilters((f) =>
+                      showAdvanced
+                        ? { ...f, query: q }
+                        : {
+                            query: q,
+                            minimum_verified_jobs: 0,
+                            minimum_completion_rate: 0,
+                            minimum_confidence: "unverified",
+                          },
+                    );
                   }}
                   placeholder="e.g. CCTP cross-chain settlement on Arc"
                   spellCheck={false}
