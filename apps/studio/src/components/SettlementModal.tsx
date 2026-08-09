@@ -41,6 +41,7 @@ export function SettlementModal({
     <Modal
       title="Settlement evidence"
       size="lg"
+      elevated
       onClose={onClose}
       subtitle={
         explainHash ? (

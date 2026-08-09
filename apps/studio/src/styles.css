@@ -896,6 +896,10 @@ main {
   animation: fade-in 0.2s ease both;
 }
 
+.modal-root.is-elevated {
+  z-index: 90;
+}
+
 .modal-panel {
   width: min(36rem, 100%);
   max-height: min(88vh, 52rem);

@@ -387,7 +387,6 @@ export function App() {
             explainBusy={explainBusy}
             onClose={() => setSelected(null)}
             onExplain={(tx) => {
-              setSelected(null);
               void runExplain(tx);
             }}
           />

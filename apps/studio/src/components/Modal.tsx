@@ -1,5 +1,8 @@
 import { useEffect, useId, useRef, type ReactNode } from "react";
 
+/** Depth of open modals — Escape / body lock only apply to the topmost. */
+let modalStack = 0;
+
 interface Props {
   title: string;
   /** Full string for title tooltip when truncated. */
@@ -9,6 +12,8 @@ interface Props {
   /** Wider panel for settlement path + panels. */
   size?: "md" | "lg";
   subtitle?: ReactNode;
+  /** Stack above another modal (e.g. settlement over agent details). */
+  elevated?: boolean;
 }
 
 export function Modal({
@@ -18,28 +23,35 @@ export function Modal({
   children,
   size = "md",
   subtitle,
+  elevated = false,
 }: Props) {
   const titleId = useId();
   const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
+    modalStack += 1;
+    const depth = modalStack;
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     closeRef.current?.focus();
 
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key !== "Escape") return;
+      if (depth !== modalStack) return;
+      e.stopPropagation();
+      onClose();
     }
     window.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = prev;
+      modalStack -= 1;
       window.removeEventListener("keydown", onKey);
+      if (modalStack === 0) document.body.style.overflow = prev;
     };
   }, [onClose]);
 
   return (
     <div
-      className="modal-root"
+      className={`modal-root${elevated ? " is-elevated" : ""}`}
       role="presentation"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
