@@ -103,8 +103,7 @@ export function App() {
       const { envelope, mode: m } = await searchProviders(next);
       setSearch(envelope);
       setMode(m);
-      const top = envelope.result?.results?.[0] ?? null;
-      setSelected(top);
+      setSelected(null);
       const n = envelope.result?.results?.length ?? 0;
       if (!opts?.silent) {
         toast.push(
