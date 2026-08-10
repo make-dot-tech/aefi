@@ -56,6 +56,7 @@ export function App() {
   );
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showPresets, setShowPresets] = useState(false);
+  const [showSort, setShowSort] = useState(false);
   const [liveOk, setLiveOk] = useState(false);
   const [mode, setMode] = useState<DataMode>("offline");
   const [search, setSearch] = useState<AefiEnvelope<ProviderSearchResult> | null>(
@@ -144,6 +145,7 @@ export function App() {
   }
 
   function changeSort(sortBy: ProviderSortBy) {
+    setShowSort(false);
     const next = withSearchDefaults(filters, {
       sort_by: sortBy,
       sort_dir: "desc",
@@ -302,7 +304,10 @@ export function App() {
                     disabled={busy || !liveOk || scenarios.length === 0}
                     aria-expanded={showPresets}
                     aria-haspopup="listbox"
-                    onClick={() => setShowPresets((v) => !v)}
+                    onClick={() => {
+                      setShowSort(false);
+                      setShowPresets((v) => !v);
+                    }}
                   >
                     {activeScenario
                       ? (scenarios.find((s) => s.id === activeScenario)?.label ??
@@ -354,23 +359,6 @@ export function App() {
           </form>
 
           <div className="search-toolbar">
-            <label className="sort-control">
-              Sort by
-              <select
-                className="tx-input sort-select"
-                value={filters.sort_by ?? "score"}
-                disabled={busy || !liveOk}
-                onChange={(e) =>
-                  changeSort(e.target.value as ProviderSortBy)
-                }
-              >
-                {SORT_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
-                ))}
-              </select>
-            </label>
             <button
               type="button"
               className="advanced-toggle"
@@ -378,6 +366,51 @@ export function App() {
             >
               {showAdvanced ? "Hide" : "Show"} structured filters
             </button>
+            <div className="sort-control">
+              <span className="sort-label" id="sort-label">
+                Sort by
+              </span>
+              <div className="sort-wrap">
+                <button
+                  type="button"
+                  className="tx-input sort-trigger"
+                  disabled={busy || !liveOk}
+                  aria-labelledby="sort-label"
+                  aria-expanded={showSort}
+                  aria-haspopup="listbox"
+                  onClick={() => {
+                    setShowPresets(false);
+                    setShowSort((v) => !v);
+                  }}
+                >
+                  {SORT_OPTIONS.find((o) => o.value === (filters.sort_by ?? "score"))
+                    ?.label ?? "Relevance"}
+                </button>
+                {showSort ? (
+                  <ul className="sort-menu" role="listbox">
+                    {SORT_OPTIONS.map((opt) => (
+                      <li
+                        key={opt.value}
+                        role="option"
+                        aria-selected={(filters.sort_by ?? "score") === opt.value}
+                      >
+                        <button
+                          type="button"
+                          className={
+                            (filters.sort_by ?? "score") === opt.value
+                              ? "is-active"
+                              : undefined
+                          }
+                          onClick={() => changeSort(opt.value)}
+                        >
+                          {opt.label}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null}
+              </div>
+            </div>
           </div>
 
           {showAdvanced ? (

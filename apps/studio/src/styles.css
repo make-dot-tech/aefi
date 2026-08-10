@@ -9,6 +9,7 @@
   --copper: #ff6bb5;
   --copper-dim: rgba(255, 107, 181, 0.18);
   --danger: #e07a6a;
+  --line: rgba(255, 255, 255, 0.12);
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 }
 
@@ -1395,29 +1396,72 @@ main {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+  align-items: flex-end;
+}
+
+.sort-label {
   font-size: 0.72rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--mist);
 }
 
-.sort-select {
+.sort-wrap {
+  position: relative;
+}
+
+.sort-trigger {
   min-width: 12rem;
   height: 2.4rem;
   padding: 0.4rem 0.7rem;
-  text-transform: none;
-  letter-spacing: 0;
+  text-align: left;
   font-size: 0.9rem;
   color: var(--paper);
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--ink-2);
+  border: 1px solid var(--line);
   border-radius: 0.35rem;
   cursor: pointer;
 }
 
-.sort-select:disabled {
+.sort-trigger:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--mist) 55%, transparent);
+}
+
+.sort-trigger:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.sort-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  z-index: 100;
+  min-width: 100%;
+  margin: 0;
+  padding: 0.35rem;
+  list-style: none;
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+.sort-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  padding: 0.55rem 0.7rem;
+  cursor: pointer;
+}
+
+.sort-menu button:hover,
+.sort-menu button.is-active {
+  background: color-mix(in srgb, var(--mint) 12%, transparent);
 }
 
 .pager {
