@@ -4,6 +4,7 @@ import { capabilityText } from "./embeddings.js";
 import {
   fuseScores,
   pageProviders,
+  shouldHardRestrictSemantic,
   sortProviders,
 } from "./rank.js";
 
@@ -30,6 +31,35 @@ describe("fuseScores", () => {
     // α=0.35 * 0.9*100 + β=0.65 * 100 = 31.5 + 65 = 96.5
     assert.ok(fused.fused > 90);
     assert.ok(fused.reasons.includes("capability_semantic_match"));
+  });
+});
+
+describe("shouldHardRestrictSemantic", () => {
+  it("allows hard-restrict for capability discovery with no floors", () => {
+    assert.equal(shouldHardRestrictSemantic({}), true);
+    assert.equal(
+      shouldHardRestrictSemantic({
+        minimum_verified_jobs: 0,
+        minimum_completion_rate: 0,
+        minimum_confidence: "unverified",
+      }),
+      true,
+    );
+  });
+
+  it("disables hard-restrict when job or rate floors are set", () => {
+    assert.equal(
+      shouldHardRestrictSemantic({ minimum_verified_jobs: 1 }),
+      false,
+    );
+    assert.equal(
+      shouldHardRestrictSemantic({ minimum_completion_rate: 0.5 }),
+      false,
+    );
+    assert.equal(
+      shouldHardRestrictSemantic({ minimum_confidence: "medium" }),
+      false,
+    );
   });
 });
 

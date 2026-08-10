@@ -3,6 +3,7 @@ import { getEmbeddings } from "../search/embeddings.js";
 import {
   fuseScores,
   pageProviders,
+  shouldHardRestrictSemantic,
   sortProviders,
   type ProviderSortBy,
   type ProviderSortDir,
@@ -445,11 +446,18 @@ export async function searchProviderPerformance(
   }
 
   try {
-    // Semantic hits rank results; hard-restrict only as a first pass. If that
-    // yields nothing (common when NL recall ≠ structured job filters), scan the
-    // full graph and still apply semantic scores when present.
+    // Semantic hits soft-rank by default when performance floors are set
+    // (Completed jobs preset). Hard-restrict only for capability discovery
+    // with no floors; if that pass is empty, fall back to the full graph.
+    const allowHardRestrict = shouldHardRestrictSemantic({
+      minimum_verified_jobs: minJobs,
+      minimum_completion_rate: minRate,
+      minimum_confidence: minConf,
+    });
     const semanticIds =
-      query && semanticMap.size > 0 ? [...semanticMap.keys()] : null;
+      query && semanticMap.size > 0 && allowHardRestrict
+        ? [...semanticMap.keys()]
+        : null;
 
     async function fetchRows(restrictIds: string[] | null) {
       const result = await session.run(
@@ -536,8 +544,10 @@ export async function searchProviderPerformance(
 
     const maxGraph = Math.max(...rows.map((r) => r.graph_score), 1);
     for (const row of rows) {
+      // With an NL query, always fuse on a shared scale (missing hits → 0)
+      // so soft-ranked job providers stay comparable to semantic matches.
       const fused = fuseScores({
-        semanticSimilarity: query ? row.semantic_similarity : null,
+        semanticSimilarity: query ? (row.semantic_similarity ?? 0) : null,
         graphScore: row.graph_score,
         maxGraphScore: maxGraph,
       });

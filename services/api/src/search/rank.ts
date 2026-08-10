@@ -4,6 +4,25 @@ export const SEMANTIC_WEIGHT = 0.35;
 export const GRAPH_WEIGHT = 0.65;
 export const SEMANTIC_MATCH_THRESHOLD = 0.35;
 
+/**
+ * When performance floors are set (e.g. Completed jobs preset), semantic recall
+ * must soft-rank — not hard-restrict — or job providers outside the vector
+ * neighborhood disappear. Capability-only discovery (no floors) may still
+ * hard-restrict to semantic hits.
+ */
+export function shouldHardRestrictSemantic(input: {
+  minimum_verified_jobs?: number;
+  minimum_completion_rate?: number;
+  minimum_confidence?: "high" | "medium" | "low" | "unverified";
+}): boolean {
+  const minJobs = input.minimum_verified_jobs ?? 0;
+  const minRate = input.minimum_completion_rate ?? 0;
+  const minConf = input.minimum_confidence ?? "unverified";
+  if (minJobs > 0 || minRate > 0) return false;
+  if (minConf !== "unverified") return false;
+  return true;
+}
+
 export const PROVIDER_SORT_BY = [
   "score",
   "verified_jobs",
