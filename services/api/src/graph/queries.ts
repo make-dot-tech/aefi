@@ -11,6 +11,27 @@ export function getDriver(): Driver {
   return driver;
 }
 
+/** Ensure hot-path property indexes exist (idempotent). */
+export async function ensureGraphIndexes(): Promise<void> {
+  const session = getDriver().session();
+  const statements = [
+    "CREATE INDEX payment_tx_hash IF NOT EXISTS FOR (n:Payment) ON (n.tx_hash)",
+    "CREATE INDEX transfer_tx_hash IF NOT EXISTS FOR (n:TransferEvent) ON (n.tx_hash)",
+    "CREATE INDEX memo_tx_hash IF NOT EXISTS FOR (n:MemoEvent) ON (n.tx_hash)",
+    "CREATE INDEX job_tx_hash IF NOT EXISTS FOR (n:Job) ON (n.tx_hash)",
+    "CREATE INDEX agent_chain_id IF NOT EXISTS FOR (n:Agent) ON (n.chain_id)",
+    "CREATE INDEX job_chain_id IF NOT EXISTS FOR (n:Job) ON (n.chain_id)",
+    "CREATE INDEX payment_chain_id IF NOT EXISTS FOR (n:Payment) ON (n.chain_id)",
+  ];
+  try {
+    for (const cypher of statements) {
+      await session.run(cypher);
+    }
+  } finally {
+    await session.close();
+  }
+}
+
 export function chainId(): string {
   return loadChainId();
 }
@@ -151,35 +172,45 @@ export async function findPaymentById(paymentId: string): Promise<PaymentView | 
 
 export async function explainTx(txHash: string): Promise<TxExplainView> {
   const hash = txHash.toLowerCase();
-  const payments = await findPaymentsByTx(hash);
-  const session = getDriver().session();
   const cid = chainId();
-  try {
-    const result = await session.run(
-      `
-      OPTIONAL MATCH (t:TransferEvent {tx_hash: $hash})
-      WHERE ${chainClause("t")}
-      OPTIONAL MATCH (m:MemoEvent {tx_hash: $hash})
-      WHERE ${chainClause("m")}
-      OPTIONAL MATCH (j:Job {tx_hash: $hash})
-      WHERE ${chainClause("j")}
-      RETURN collect(DISTINCT t) AS transfers,
-             collect(DISTINCT m) AS memos,
-             collect(DISTINCT j) AS jobs
-      `,
-      { hash, chainId: cid },
-    );
-    const rec = result.records[0];
-    return {
-      tx_hash: hash,
-      payments,
-      transfers: rec ? propsList(rec, "transfers") : [],
-      memos: rec ? propsList(rec, "memos") : [],
-      jobs: rec ? propsList(rec, "jobs") : [],
-    };
-  } finally {
-    await session.close();
-  }
+
+  const paymentsPromise = findPaymentsByTx(hash);
+  const extrasPromise = (async () => {
+    const session = getDriver().session();
+    try {
+      const result = await session.run(
+        `
+        OPTIONAL MATCH (t:TransferEvent {tx_hash: $hash})
+        WHERE ${chainClause("t")}
+        OPTIONAL MATCH (m:MemoEvent {tx_hash: $hash})
+        WHERE ${chainClause("m")}
+        OPTIONAL MATCH (j:Job {tx_hash: $hash})
+        WHERE ${chainClause("j")}
+        RETURN collect(DISTINCT t) AS transfers,
+               collect(DISTINCT m) AS memos,
+               collect(DISTINCT j) AS jobs
+        `,
+        { hash, chainId: cid },
+      );
+      const rec = result.records[0];
+      return {
+        transfers: rec ? propsList(rec, "transfers") : [],
+        memos: rec ? propsList(rec, "memos") : [],
+        jobs: rec ? propsList(rec, "jobs") : [],
+      };
+    } finally {
+      await session.close();
+    }
+  })();
+
+  const [payments, extras] = await Promise.all([paymentsPromise, extrasPromise]);
+  return {
+    tx_hash: hash,
+    payments,
+    transfers: extras.transfers,
+    memos: extras.memos,
+    jobs: extras.jobs,
+  };
 }
 
 export async function findJob(jobKey: string): Promise<JobView | null> {

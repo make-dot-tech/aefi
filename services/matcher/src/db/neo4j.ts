@@ -12,6 +12,17 @@ const CONSTRAINTS = [
   "CREATE CONSTRAINT outcome_id IF NOT EXISTS FOR (n:Outcome) REQUIRE n.id IS UNIQUE",
 ];
 
+/** Property indexes for hot read paths (tx lookup, chain filters). */
+const INDEXES = [
+  "CREATE INDEX payment_tx_hash IF NOT EXISTS FOR (n:Payment) ON (n.tx_hash)",
+  "CREATE INDEX transfer_tx_hash IF NOT EXISTS FOR (n:TransferEvent) ON (n.tx_hash)",
+  "CREATE INDEX memo_tx_hash IF NOT EXISTS FOR (n:MemoEvent) ON (n.tx_hash)",
+  "CREATE INDEX job_tx_hash IF NOT EXISTS FOR (n:Job) ON (n.tx_hash)",
+  "CREATE INDEX agent_chain_id IF NOT EXISTS FOR (n:Agent) ON (n.chain_id)",
+  "CREATE INDEX job_chain_id IF NOT EXISTS FOR (n:Job) ON (n.chain_id)",
+  "CREATE INDEX payment_chain_id IF NOT EXISTS FOR (n:Payment) ON (n.chain_id)",
+];
+
 const WRITE_CHUNK = 200;
 
 export class GraphStore {
@@ -33,6 +44,9 @@ export class GraphStore {
     const session = this.driver.session();
     try {
       for (const cypher of CONSTRAINTS) {
+        await session.run(cypher);
+      }
+      for (const cypher of INDEXES) {
         await session.run(cypher);
       }
     } finally {

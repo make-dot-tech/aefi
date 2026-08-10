@@ -540,7 +540,10 @@ export async function searchProviders(body: unknown = {}): Promise<AefiEnvelope>
     semantic_top_k: filters.semantic_top_k ?? (filters.query ? 25 : undefined),
   };
 
-  const total = await countProviders().catch(() => 0);
+  const total =
+    page.total_matched > 0
+      ? page.total_matched
+      : await countProviders().catch(() => 0);
   if (page.total_matched === 0 || providers.length === 0) {
     const emptyMsg =
       total === 0

@@ -446,9 +446,6 @@ export async function searchProviderPerformance(
   }
 
   try {
-    // Semantic hits soft-rank by default when performance floors are set
-    // (Completed jobs preset). Hard-restrict only for capability discovery
-    // with no floors; if that pass is empty, fall back to the full graph.
     const allowHardRestrict = shouldHardRestrictSemantic({
       minimum_verified_jobs: minJobs,
       minimum_completion_rate: minRate,
@@ -459,9 +456,63 @@ export async function searchProviderPerformance(
         ? [...semanticMap.keys()]
         : null;
 
-    async function fetchRows(restrictIds: string[] | null) {
+    /** Lightweight metrics only — no job/payment node payloads. */
+    async function listCandidates(restrictIds: string[] | null) {
+      const jobCentric = minJobs > 0 && restrictIds == null;
       const result = await session.run(
-        `
+        jobCentric
+          ? `
+      MATCH (jSeed:Job)-[:PROVIDER]->(a:Agent)
+      WHERE (a.chain_id IS NULL OR toString(a.chain_id) = $chainId)
+        AND (jSeed.chain_id IS NULL OR toString(jSeed.chain_id) = $chainId)
+        AND coalesce(a.demo, false) = false
+        AND NOT a.id STARTS WITH 'agent:demo:'
+        AND (
+          a.id STARTS WITH 'agent:erc8004:'
+          OR coalesce(a.identity_source, '') = 'erc_8004'
+          OR true
+        )
+        AND NOT (
+          a.id STARTS WITH 'agent:wallet:'
+          AND a.linked_erc8004 IS NOT NULL
+        )
+      WITH DISTINCT a
+      OPTIONAL MATCH (a)-[:CONTROLS]->(aw:Wallet)
+      OPTIONAL MATCH (wa:Agent)-[:CONTROLS]->(aw)
+      WHERE wa.id STARTS WITH 'agent:wallet:'
+      OPTIONAL MATCH (j:Job)-[:PROVIDER]->(prov)
+      WHERE (prov = a OR prov = wa)
+        AND (j.chain_id IS NULL OR toString(j.chain_id) = $chainId)
+      OPTIONAL MATCH (j)-[:HAS_OUTCOME]->(o:Outcome)
+      OPTIONAL MATCH (pay:Payment)-[:FOR_JOB]->(j)
+      OPTIONAL MATCH (ev:Evidence)-[:SUPPORTS]->(a)
+      WITH a,
+           count(DISTINCT j) AS verified_jobs,
+           count(DISTINCT CASE WHEN o.kind = 'JobCompleted' THEN o END) AS completed_jobs,
+           count(DISTINCT CASE WHEN o.kind = 'JobRejected' THEN o END) AS rejected_jobs,
+           count(DISTINCT CASE WHEN o.kind = 'JobExpired' THEN o END) AS expired_jobs,
+           count(DISTINCT pay) AS payment_linked_jobs,
+           count(DISTINCT CASE
+             WHEN ev.type = 'reputation_event'
+               OR ev.event_kind = 'NewFeedback'
+               OR toString(ev.type) CONTAINS 'reputation'
+             THEN ev END) AS feedback_events
+      WHERE verified_jobs >= $minJobs
+        AND (
+          $capability IS NULL
+          OR any(c IN coalesce(a.capabilities, []) WHERE toLower(toString(c)) = $capability)
+          OR toLower(coalesce(a.capability, '')) = $capability
+          OR toLower(coalesce(a.capability_text, '')) CONTAINS $capability
+          OR toLower(coalesce(a.blurb, '')) CONTAINS $capability
+          OR toLower(coalesce(a.display_name, '')) CONTAINS $capability
+        )
+      RETURN a.id AS id,
+             a.last_block AS last_block,
+             a.last_tx AS last_tx,
+             verified_jobs, completed_jobs, rejected_jobs, expired_jobs,
+             payment_linked_jobs, feedback_events
+          `
+          : `
       MATCH (a:Agent)
       WHERE (a.chain_id IS NULL OR toString(a.chain_id) = $chainId)
         AND coalesce(a.demo, false) = false
@@ -476,6 +527,133 @@ export async function searchProviderPerformance(
           a.id STARTS WITH 'agent:wallet:'
           AND a.linked_erc8004 IS NOT NULL
         )
+      OPTIONAL MATCH (a)-[:CONTROLS]->(aw:Wallet)
+      OPTIONAL MATCH (wa:Agent)-[:CONTROLS]->(aw)
+      WHERE wa.id STARTS WITH 'agent:wallet:'
+      OPTIONAL MATCH (j:Job)-[:PROVIDER]->(prov)
+      WHERE (prov = a OR prov = wa)
+        AND (j.chain_id IS NULL OR toString(j.chain_id) = $chainId)
+      OPTIONAL MATCH (j)-[:HAS_OUTCOME]->(o:Outcome)
+      OPTIONAL MATCH (pay:Payment)-[:FOR_JOB]->(j)
+      OPTIONAL MATCH (ev:Evidence)-[:SUPPORTS]->(a)
+      WITH a,
+           count(DISTINCT j) AS verified_jobs,
+           count(DISTINCT CASE WHEN o.kind = 'JobCompleted' THEN o END) AS completed_jobs,
+           count(DISTINCT CASE WHEN o.kind = 'JobRejected' THEN o END) AS rejected_jobs,
+           count(DISTINCT CASE WHEN o.kind = 'JobExpired' THEN o END) AS expired_jobs,
+           count(DISTINCT pay) AS payment_linked_jobs,
+           count(DISTINCT CASE
+             WHEN ev.type = 'reputation_event'
+               OR ev.event_kind = 'NewFeedback'
+               OR toString(ev.type) CONTAINS 'reputation'
+             THEN ev END) AS feedback_events
+      WHERE verified_jobs >= $minJobs
+        AND (
+          $capability IS NULL
+          OR any(c IN coalesce(a.capabilities, []) WHERE toLower(toString(c)) = $capability)
+          OR toLower(coalesce(a.capability, '')) = $capability
+          OR toLower(coalesce(a.capability_text, '')) CONTAINS $capability
+          OR toLower(coalesce(a.blurb, '')) CONTAINS $capability
+          OR toLower(coalesce(a.display_name, '')) CONTAINS $capability
+        )
+      RETURN a.id AS id,
+             a.last_block AS last_block,
+             a.last_tx AS last_tx,
+             verified_jobs, completed_jobs, rejected_jobs, expired_jobs,
+             payment_linked_jobs, feedback_events
+          `,
+        { minJobs, capability, restrictIds, chainId: chainId() },
+      );
+
+      const rows: ProviderPerformance[] = [];
+      for (const rec of result.records) {
+        const id = String(rec.get("id") ?? "");
+        if (!id) continue;
+        const verified_jobs = toNum(rec.get("verified_jobs"));
+        const completed_jobs = toNum(rec.get("completed_jobs"));
+        const rejected_jobs = toNum(rec.get("rejected_jobs"));
+        const expired_jobs = toNum(rec.get("expired_jobs"));
+        const payment_linked_jobs = toNum(rec.get("payment_linked_jobs"));
+        const feedback_events = toNum(rec.get("feedback_events"));
+        const completion_rate =
+          verified_jobs > 0 ? completed_jobs / verified_jobs : 0;
+        if (completion_rate + 1e-9 < minRate) continue;
+
+        const { confidence, evidence_distribution } = deriveConfidence({
+          verified_jobs,
+          completed_jobs,
+          payment_linked_jobs,
+          feedback_events,
+        });
+        if (CONF_RANK[confidence] < CONF_RANK[minConf]) continue;
+
+        const last_block = asOptionalNumber(rec.get("last_block"));
+        const tipEnv = process.env.AEFI_TIP_BLOCK;
+        const tip_block =
+          tipEnv && Number.isFinite(Number(tipEnv)) ? Number(tipEnv) : null;
+        const { score, ranking_explanation } = scoreProvider({
+          verified_jobs,
+          completion_rate,
+          payment_linked_jobs,
+          feedback_events,
+          confidence,
+          last_block,
+          tip_block,
+        });
+
+        const sem = semanticMap.get(id) ?? null;
+        rows.push({
+          provider_id: id,
+          display_name: null,
+          blurb: null,
+          wallet: null,
+          capabilities: [],
+          identity: {
+            agent_id: null,
+            chain_id: null,
+            network: null,
+            registry: null,
+            owner: null,
+            creator: null,
+            registered_tx: null,
+            registered_block: null,
+            last_tx: asOptionalString(rec.get("last_tx")),
+            last_block,
+            last_event: null,
+            identity_source: null,
+            role: null,
+            status: "unconfigured",
+          },
+          performance: {
+            verified_jobs,
+            completed_jobs,
+            rejected_jobs,
+            expired_jobs,
+            completion_rate: Math.round(completion_rate * 1000) / 1000,
+            payment_linked_jobs,
+            feedback_events,
+            confidence,
+            evidence_distribution,
+          },
+          sample_jobs: [],
+          sample_settlements: [],
+          ranking_explanation,
+          score,
+          graph_score: score,
+          semantic_similarity: sem,
+        });
+      }
+      return rows;
+    }
+
+    /** Full card payload for a small id set (one page). */
+    async function hydrateByIds(ids: string[]) {
+      if (ids.length === 0) return new Map<string, ProviderPerformance>();
+      const result = await session.run(
+        `
+      MATCH (a:Agent)
+      WHERE a.id IN $ids
+        AND (a.chain_id IS NULL OR toString(a.chain_id) = $chainId)
       OPTIONAL MATCH (a)-[:CONTROLS]->(aw:Wallet)
       OPTIONAL MATCH (wa:Agent)-[:CONTROLS]->(aw)
       WHERE wa.id STARTS WITH 'agent:wallet:'
@@ -503,49 +681,35 @@ export async function searchProviderPerformance(
            size([e IN feedback WHERE e.type = 'reputation_event'
              OR e.event_kind = 'NewFeedback'
              OR toString(e.type) CONTAINS 'reputation']) AS feedback_events
-      WHERE verified_jobs >= $minJobs
-        AND (
-          $capability IS NULL
-          OR any(c IN coalesce(a.capabilities, []) WHERE toLower(toString(c)) = $capability)
-          OR toLower(coalesce(a.capability, '')) = $capability
-          OR any(j IN jobs WHERE toLower(coalesce(j.capability, '')) = $capability)
-          OR any(j IN jobs WHERE toLower(coalesce(j.description, '')) CONTAINS $capability)
-          OR toLower(coalesce(a.capability_text, '')) CONTAINS $capability
-          OR toLower(coalesce(a.blurb, '')) CONTAINS $capability
-          OR toLower(coalesce(a.display_name, '')) CONTAINS $capability
-        )
-      RETURN a, w, jobs, outcomes, payments, verified_jobs, completed_jobs,
+      RETURN a, w,
+             jobs[0..6] AS jobs,
+             outcomes[0..24] AS outcomes,
+             payments[0..5] AS payments,
+             verified_jobs, completed_jobs,
              rejected_jobs, expired_jobs, payment_linked_jobs, feedback_events
       `,
-        { minJobs, capability, restrictIds, chainId: chainId() },
+        { ids, chainId: chainId() },
       );
 
-      const mappedRows: ProviderPerformance[] = [];
+      const byId = new Map<string, ProviderPerformance>();
       for (const rec of result.records) {
         const mapped = mapRecord(rec);
         if (!mapped) continue;
-        if (mapped.performance.completion_rate + 1e-9 < minRate) continue;
-        if (CONF_RANK[mapped.performance.confidence] < CONF_RANK[minConf]) {
-          continue;
-        }
-
         const sem = semanticMap.get(mapped.provider_id) ?? null;
         mapped.semantic_similarity = sem;
         mapped.graph_score = mapped.score;
-        mappedRows.push(mapped);
+        byId.set(mapped.provider_id, mapped);
       }
-      return mappedRows;
+      return byId;
     }
 
-    let rows = await fetchRows(semanticIds);
-    if (rows.length === 0 && semanticIds) {
-      rows = await fetchRows(null);
+    let candidates = await listCandidates(semanticIds);
+    if (candidates.length === 0 && semanticIds) {
+      candidates = await listCandidates(null);
     }
 
-    const maxGraph = Math.max(...rows.map((r) => r.graph_score), 1);
-    for (const row of rows) {
-      // With an NL query, always fuse on a shared scale (missing hits → 0)
-      // so soft-ranked job providers stay comparable to semantic matches.
+    const maxGraph = Math.max(...candidates.map((r) => r.graph_score), 1);
+    for (const row of candidates) {
       const fused = fuseScores({
         semanticSimilarity: query ? (row.semantic_similarity ?? 0) : null,
         graphScore: row.graph_score,
@@ -558,10 +722,24 @@ export async function searchProviderPerformance(
       ];
     }
 
-    const sorted = sortProviders(rows, sort_by, sort_dir);
+    const sorted = sortProviders(candidates, sort_by, sort_dir);
     const page = pageProviders(sorted, offset, limit);
+    const hydrated = await hydrateByIds(page.items.map((p) => p.provider_id));
+
+    const items: ProviderPerformance[] = page.items.map((light) => {
+      const full = hydrated.get(light.provider_id);
+      if (!full) return light;
+      return {
+        ...full,
+        score: light.score,
+        graph_score: light.graph_score,
+        semantic_similarity: light.semantic_similarity,
+        ranking_explanation: light.ranking_explanation,
+      };
+    });
+
     return {
-      items: page.items,
+      items,
       total_matched: page.total_matched,
       offset,
       limit,
