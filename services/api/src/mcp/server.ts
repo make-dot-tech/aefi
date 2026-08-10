@@ -65,7 +65,7 @@ const tools = [
   {
     name: "search_providers",
     description:
-      "Search providers by natural-language intent (semantic) and/or structured performance filters. Returns evidence-backed rankings fused with graph metrics.",
+      "Search providers by natural-language intent (semantic) and/or structured performance filters. Supports sort_by, sort_dir, offset, and limit for backend-owned ranking and pagination.",
     inputSchema: {
       type: "object",
       properties: {
@@ -80,7 +80,26 @@ const tools = [
           type: "string",
           enum: ["high", "medium", "low", "unverified"],
         },
-        limit: { type: "number" },
+        sort_by: {
+          type: "string",
+          enum: ["score", "verified_jobs", "completion_rate", "recent"],
+          description:
+            "Sort key applied after scoring (default score). Tie-break is provider_id.",
+        },
+        sort_dir: {
+          type: "string",
+          enum: ["asc", "desc"],
+          description: "Sort direction (default desc)",
+        },
+        limit: {
+          type: "number",
+          description: "Page size (default 25, max 100)",
+        },
+        offset: {
+          type: "number",
+          description: "Number of matched providers to skip (default 0)",
+        },
+        semantic_top_k: { type: "number" },
       },
     },
   },

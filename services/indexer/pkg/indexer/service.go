@@ -57,7 +57,7 @@ func (s *Service) Run(ctx context.Context) error {
 	const maxBackoff = 60 * time.Second
 
 	for {
-		err := s.pollOnce(ctx, &from)
+		behind, err := s.pollOnce(ctx, &from)
 		sleep := s.PollEvery
 		if err != nil {
 			if isRateLimited(err) {
@@ -79,12 +79,24 @@ func (s *Service) Run(ctx context.Context) error {
 			}
 		} else {
 			backoff = s.PollEvery
+			// Catch up without sleeping between batches while still behind tip.
+			if behind {
+				sleep = 0
+			}
 		}
 
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-time.After(sleep):
+		if sleep > 0 {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(sleep):
+			}
+		} else {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+			}
 		}
 	}
 }
@@ -99,16 +111,16 @@ func isRateLimited(err error) bool {
 		strings.Contains(msg, "too many requests")
 }
 
-func (s *Service) pollOnce(ctx context.Context, from *uint64) error {
+func (s *Service) pollOnce(ctx context.Context, from *uint64) (behind bool, err error) {
 	head, err := s.RPC.BlockNumber(ctx)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if *from == 0 {
 		*from = head
 	}
 	if *from > head {
-		return nil
+		return false, nil
 	}
 	to := *from + s.BatchSize - 1
 	if to > head {
@@ -117,7 +129,7 @@ func (s *Service) pollOnce(ctx context.Context, from *uint64) error {
 
 	logs, err := s.RPC.FilterLogs(ctx, *from, to, s.Registry.Addresses())
 	if err != nil {
-		return fmt.Errorf("filter logs %d-%d: %w", *from, to, err)
+		return false, fmt.Errorf("filter logs %d-%d: %w", *from, to, err)
 	}
 
 	events := make([]any, 0, len(logs))
@@ -138,11 +150,11 @@ func (s *Service) pollOnce(ctx context.Context, from *uint64) error {
 		LastLogIndex: lastLogIndex,
 	}
 	if err := s.Store.UpsertBatch(ctx, s.ChainID, events, cursor); err != nil {
-		return fmt.Errorf("upsert: %w", err)
+		return false, fmt.Errorf("upsert: %w", err)
 	}
 	slog.Info("indexed range", "from", *from, "to", to, "logs", len(logs), "events", len(events))
 	*from = to + 1
-	return nil
+	return to < head, nil
 }
 
 // ProcessRange backfills a closed block interval (inclusive).

@@ -454,6 +454,14 @@ export function traceTask(taskExecutionId: string): AefiEnvelope {
 function parseSearchFilters(body: unknown): ProviderSearchFilters {
   const b = (body ?? {}) as Record<string, unknown>;
   const conf = b.minimum_confidence;
+  const sortBy = b.sort_by;
+  const sortDir = b.sort_dir;
+  const offsetRaw =
+    typeof b.offset === "number"
+      ? b.offset
+      : typeof b.offset === "string"
+        ? Number(b.offset)
+        : undefined;
   return {
     query: typeof b.query === "string" ? b.query : undefined,
     capability: typeof b.capability === "string" ? b.capability : undefined,
@@ -474,16 +482,46 @@ function parseSearchFilters(body: unknown): ProviderSearchFilters {
         ? conf
         : undefined,
     limit: typeof b.limit === "number" ? b.limit : undefined,
+    offset:
+      typeof offsetRaw === "number" && Number.isFinite(offsetRaw)
+        ? offsetRaw
+        : undefined,
+    sort_by:
+      sortBy === "score" ||
+      sortBy === "verified_jobs" ||
+      sortBy === "completion_rate" ||
+      sortBy === "recent"
+        ? sortBy
+        : undefined,
+    sort_dir: sortDir === "asc" || sortDir === "desc" ? sortDir : undefined,
     semantic_top_k:
       typeof b.semantic_top_k === "number" ? b.semantic_top_k : undefined,
   };
 }
 
+function searchPageMeta(page: {
+  total_matched: number;
+  offset: number;
+  limit: number;
+  sort_by: string;
+  sort_dir: string;
+  has_more: boolean;
+}) {
+  return {
+    total_matched: page.total_matched,
+    offset: page.offset,
+    limit: page.limit,
+    sort_by: page.sort_by,
+    sort_dir: page.sort_dir,
+    has_more: page.has_more,
+  };
+}
+
 export async function searchProviders(body: unknown = {}): Promise<AefiEnvelope> {
   const filters = parseSearchFilters(body);
-  let providers;
+  let page;
   try {
-    providers = await searchProviderPerformance(filters);
+    page = await searchProviderPerformance(filters);
   } catch {
     return gapEnvelope(
       "Provider search unavailable — Neo4j evidence graph is unreachable.",
@@ -492,16 +530,31 @@ export async function searchProviders(body: unknown = {}): Promise<AefiEnvelope>
     );
   }
 
+  const providers = page.items;
+  const interpreted = {
+    ...filters,
+    limit: page.limit,
+    offset: page.offset,
+    sort_by: page.sort_by,
+    sort_dir: page.sort_dir,
+    semantic_top_k: filters.semantic_top_k ?? (filters.query ? 25 : undefined),
+  };
+
   const total = await countProviders().catch(() => 0);
-  if (providers.length === 0) {
-    return envelopeFromDisposition(
+  if (page.total_matched === 0 || providers.length === 0) {
+    const emptyMsg =
       total === 0
         ? "No provider job history in the evidence graph yet. Wait for the matcher to project ERC-8183 activity from Postgres."
-        : "No providers matched the structured filters.",
+        : page.total_matched === 0
+          ? "No providers matched the structured filters."
+          : `No providers on this page (offset ${page.offset} of ${page.total_matched}).`;
+    return envelopeFromDisposition(
+      emptyMsg,
       {
-        interpreted_filters: filters,
+        interpreted_filters: interpreted,
         results: [],
         graph_provider_count: total,
+        ...searchPageMeta(page),
       },
       await composeDisposition({
         schema_version: "0.1.0",
@@ -513,7 +566,9 @@ export async function searchProviders(body: unknown = {}): Promise<AefiEnvelope>
           known_gaps:
             total === 0
               ? ["provider_performance_graph_empty"]
-              : ["no_providers_matched_filters"],
+              : page.total_matched === 0
+                ? ["no_providers_matched_filters"]
+                : ["page_out_of_range"],
         },
       }),
       {
@@ -521,7 +576,9 @@ export async function searchProviders(body: unknown = {}): Promise<AefiEnvelope>
         known_gaps:
           total === 0
             ? ["provider_performance_graph_empty"]
-            : ["no_providers_matched_filters"],
+            : page.total_matched === 0
+              ? ["no_providers_matched_filters"]
+              : ["page_out_of_range"],
       },
     );
   }
@@ -568,15 +625,18 @@ export async function searchProviders(body: unknown = {}): Promise<AefiEnvelope>
     : "";
 
   const topLabel = shortProviderLabel(top.display_name, top.provider_id);
+  const rangeStart = page.total_matched === 0 ? 0 : page.offset + 1;
+  const rangeEnd = page.offset + providers.length;
+  const summary =
+    `Showing ${rangeStart}–${rangeEnd} of ${page.total_matched} provider(s).` +
+    ` Top on page: ${topLabel} (${(top.performance.completion_rate * 100).toFixed(1)}% completion across ${top.performance.verified_jobs} jobs).` +
+    queryBit;
 
   return {
     ...envelopeFromDisposition(
-      `Found ${providers.length} provider(s). Top match: ${topLabel} (${(top.performance.completion_rate * 100).toFixed(1)}% completion across ${top.performance.verified_jobs} jobs).${queryBit}`,
+      summary,
       {
-        interpreted_filters: {
-          ...filters,
-          semantic_top_k: filters.semantic_top_k ?? (filters.query ? 25 : undefined),
-        },
+        interpreted_filters: interpreted,
         results: providers.map((p) => ({
           provider_id: p.provider_id,
           display_name: p.display_name,
@@ -598,6 +658,7 @@ export async function searchProviders(body: unknown = {}): Promise<AefiEnvelope>
           },
         })),
         graph_provider_count: total,
+        ...searchPageMeta(page),
       },
       disposition,
       {

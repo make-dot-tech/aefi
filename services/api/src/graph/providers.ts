@@ -1,6 +1,12 @@
 import { chainId, getDriver } from "./queries.js";
 import { getEmbeddings } from "../search/embeddings.js";
-import { fuseScores } from "../search/rank.js";
+import {
+  fuseScores,
+  pageProviders,
+  sortProviders,
+  type ProviderSortBy,
+  type ProviderSortDir,
+} from "../search/rank.js";
 import { vectorRecallProviders } from "../search/vector.js";
 
 export interface ProviderSearchFilters {
@@ -10,7 +16,20 @@ export interface ProviderSearchFilters {
   minimum_completion_rate?: number;
   minimum_confidence?: "high" | "medium" | "low" | "unverified";
   limit?: number;
+  offset?: number;
+  sort_by?: ProviderSortBy;
+  sort_dir?: ProviderSortDir;
   semantic_top_k?: number;
+}
+
+export interface ProviderSearchPage {
+  items: ProviderPerformance[];
+  total_matched: number;
+  offset: number;
+  limit: number;
+  sort_by: ProviderSortBy;
+  sort_dir: ProviderSortDir;
+  has_more: boolean;
 }
 
 export interface EvidenceDistribution {
@@ -91,28 +110,36 @@ export function scoreProvider(p: {
   payment_linked_jobs: number;
   feedback_events: number;
   confidence: string;
+  last_block?: number | null;
+  tip_block?: number | null;
 }): { score: number; ranking_explanation: string[] } {
   const explanations: string[] = [];
   let score = 0;
+  const n = Math.max(0, p.verified_jobs);
 
-  score += p.completion_rate * 100;
+  // Discount completion until history is thick enough (full weight by 5 jobs).
+  const volumeRamp = Math.min(1, n / 5);
+  score += p.completion_rate * 100 * volumeRamp;
   if (p.completion_rate >= 0.95) {
     explanations.push("completion_rate_above_threshold");
   } else if (p.completion_rate >= 0.85) {
     explanations.push("completion_rate_acceptable");
-  } else if (p.verified_jobs > 0) {
+  } else if (n > 0) {
     explanations.push("completion_rate_below_peer_bar");
   }
+  if (n > 0 && volumeRamp < 1) {
+    explanations.push("thin_history_completion_discounted");
+  }
 
-  score += Math.log10(p.verified_jobs + 1) * 25;
-  if (p.verified_jobs >= 20) {
+  // Prefer sqrt volume over log10 so more jobs move the needle.
+  score += Math.sqrt(n) * 15;
+  if (n >= 20) {
     explanations.push("verified_job_count_above_threshold");
-  } else if (p.verified_jobs >= 5) {
+  } else if (n >= 5) {
     explanations.push("verified_job_history_present");
   }
 
-  const payRatio =
-    p.verified_jobs > 0 ? p.payment_linked_jobs / p.verified_jobs : 0;
+  const payRatio = n > 0 ? p.payment_linked_jobs / n : 0;
   score += payRatio * 15;
   if (payRatio >= 0.5) explanations.push("settlement_evidence_substantial");
 
@@ -128,8 +155,19 @@ export function scoreProvider(p: {
     score += 4;
   }
 
-  if (p.verified_jobs > 0 && p.completion_rate >= 0.9) {
-    explanations.push("recent_successful_activity");
+  // Light recency when tip + last_block are known (~full within 10k blocks, gone by 100k).
+  if (
+    p.last_block != null &&
+    p.tip_block != null &&
+    Number.isFinite(p.last_block) &&
+    Number.isFinite(p.tip_block)
+  ) {
+    const age = Math.max(0, p.tip_block - p.last_block);
+    const recency = 8 * Math.max(0, 1 - age / 100_000);
+    if (recency > 0) {
+      score += recency;
+      if (recency >= 4) explanations.push("recent_onchain_activity");
+    }
   }
 
   return { score: Math.round(score * 100) / 100, ranking_explanation: explanations };
@@ -269,12 +307,44 @@ function mapRecord(rec: {
     feedback_events,
   });
 
+  const caps = [
+    ...asStringList(agent.capabilities),
+    ...asStringList(agent.capability),
+  ];
+  const seenCaps = new Set<string>();
+  const uniqueCaps: string[] = [];
+  for (const c of caps) {
+    const key = c.toLowerCase();
+    if (seenCaps.has(key)) continue;
+    seenCaps.add(key);
+    uniqueCaps.push(c);
+  }
+
+  const walletAddr = wallet?.address
+    ? String(wallet.address)
+    : agent.wallet
+      ? String(agent.wallet)
+      : null;
+
+  const identity = deriveIdentity(
+    String(agent.id ?? ""),
+    agent,
+    walletAddr,
+    uniqueCaps,
+  );
+
+  const tipEnv = process.env.AEFI_TIP_BLOCK;
+  const tip_block =
+    tipEnv && Number.isFinite(Number(tipEnv)) ? Number(tipEnv) : null;
+
   const { score, ranking_explanation } = scoreProvider({
     verified_jobs,
     completion_rate,
     payment_linked_jobs,
     feedback_events,
     confidence,
+    last_block: identity.last_block,
+    tip_block,
   });
 
   const outcomeByJob = new Map<string, string>();
@@ -308,25 +378,6 @@ function mapRecord(rec: {
         p.properties.decimals != null ? Number(p.properties.decimals) : null,
     }));
 
-  const caps = [
-    ...asStringList(agent.capabilities),
-    ...asStringList(agent.capability),
-  ];
-  const seenCaps = new Set<string>();
-  const uniqueCaps: string[] = [];
-  for (const c of caps) {
-    const key = c.toLowerCase();
-    if (seenCaps.has(key)) continue;
-    seenCaps.add(key);
-    uniqueCaps.push(c);
-  }
-
-  const walletAddr = wallet?.address
-    ? String(wallet.address)
-    : agent.wallet
-      ? String(agent.wallet)
-      : null;
-
   return {
     provider_id: String(agent.id),
     display_name: agent.display_name
@@ -341,7 +392,7 @@ function mapRecord(rec: {
         : null,
     wallet: walletAddr,
     capabilities: uniqueCaps,
-    identity: deriveIdentity(String(agent.id), agent, walletAddr, uniqueCaps),
+    identity,
     performance: {
       verified_jobs,
       completed_jobs,
@@ -364,9 +415,12 @@ function mapRecord(rec: {
 
 export async function searchProviderPerformance(
   filters: ProviderSearchFilters = {},
-): Promise<ProviderPerformance[]> {
+): Promise<ProviderSearchPage> {
   const session = getDriver().session();
   const limit = Math.min(Math.max(filters.limit ?? 25, 1), 100);
+  const offset = Math.max(filters.offset ?? 0, 0);
+  const sort_by: ProviderSortBy = filters.sort_by ?? "score";
+  const sort_dir: ProviderSortDir = filters.sort_dir ?? "desc";
   const capability = filters.capability?.trim().toLowerCase() || null;
   const minJobs = filters.minimum_verified_jobs ?? 0;
   const minRate = filters.minimum_completion_rate ?? 0;
@@ -494,8 +548,17 @@ export async function searchProviderPerformance(
       ];
     }
 
-    rows.sort((a, b) => b.score - a.score);
-    return rows.slice(0, limit);
+    const sorted = sortProviders(rows, sort_by, sort_dir);
+    const page = pageProviders(sorted, offset, limit);
+    return {
+      items: page.items,
+      total_matched: page.total_matched,
+      offset,
+      limit,
+      sort_by,
+      sort_dir,
+      has_more: page.has_more,
+    };
   } finally {
     await session.close();
   }

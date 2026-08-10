@@ -40,7 +40,7 @@
     },
     {
       "name": "search_providers",
-      "description": "Search providers by natural-language intent (semantic) and/or structured performance filters. Returns evidence-backed rankings fused with graph metrics.",
+      "description": "Search providers by natural-language intent (semantic) and/or structured performance filters. Supports sort_by, sort_dir, offset, and limit for backend-owned ranking and pagination.",
       "wave": "A",
       "http": "POST /v1/providers/search"
     }

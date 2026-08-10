@@ -1364,7 +1364,7 @@ main {
 }
 
 .advanced-toggle {
-  margin-top: 0.85rem;
+  margin-top: 0;
   background: none;
   border: none;
   color: var(--mist);
@@ -1380,6 +1380,65 @@ main {
 
 .advanced-toggle:hover {
   color: var(--paper);
+}
+
+.search-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.85rem 1.25rem;
+  margin-top: 0.85rem;
+}
+
+.sort-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mist);
+}
+
+.sort-select {
+  min-width: 12rem;
+  height: 2.4rem;
+  padding: 0.4rem 0.7rem;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.9rem;
+  color: var(--paper);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0.35rem;
+  cursor: pointer;
+}
+
+.sort-select:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.pager-meta {
+  font-size: 0.85rem;
+  color: var(--mist);
+}
+
+.pager-actions {
+  display: flex;
+  gap: 0.5rem;
 }
 
 /* —— Spinners —— */

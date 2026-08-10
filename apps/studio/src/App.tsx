@@ -21,14 +21,39 @@ import type {
   ProviderResult,
   ProviderSearchFilters,
   ProviderSearchResult,
+  ProviderSortBy,
   VerifyResult,
 } from "./lib/types";
 
+const DEFAULT_PAGE_SIZE = 25;
+
+const SORT_OPTIONS: { value: ProviderSortBy; label: string }[] = [
+  { value: "score", label: "Relevance" },
+  { value: "verified_jobs", label: "Most jobs" },
+  { value: "completion_rate", label: "Completion rate" },
+  { value: "recent", label: "Most recent" },
+];
+
+function withSearchDefaults(
+  next: ProviderSearchFilters,
+  overrides?: Partial<ProviderSearchFilters>,
+): ProviderSearchFilters {
+  return {
+    sort_by: "score",
+    sort_dir: "desc",
+    limit: DEFAULT_PAGE_SIZE,
+    offset: 0,
+    ...next,
+    ...overrides,
+  };
+}
 export function App() {
   const toast = useToast();
   const [scenarios, setScenarios] = useState<DemoScenario[]>(SEARCH_SCENARIOS);
   const [activeScenario, setActiveScenario] = useState("");
-  const [filters, setFilters] = useState<ProviderSearchFilters>({ query: "" });
+  const [filters, setFilters] = useState<ProviderSearchFilters>(
+    withSearchDefaults({ query: "" }),
+  );
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showPresets, setShowPresets] = useState(false);
   const [liveOk, setLiveOk] = useState(false);
@@ -83,20 +108,27 @@ export function App() {
     next: ProviderSearchFilters,
     opts?: { silent?: boolean },
   ) {
+    const request = withSearchDefaults(next, {
+      offset: next.offset ?? 0,
+      limit: next.limit ?? DEFAULT_PAGE_SIZE,
+      sort_by: next.sort_by ?? "score",
+      sort_dir: next.sort_dir ?? "desc",
+    });
+    setFilters(request);
     setBusy(true);
     setExplain(null);
     setVerify(null);
     try {
-      const { envelope, mode: m } = await searchProviders(next);
+      const { envelope, mode: m } = await searchProviders(request);
       setSearch(envelope);
       setMode(m);
       setSelected(null);
-      const n = envelope.result?.results?.length ?? 0;
+      const matched = envelope.result?.total_matched ?? envelope.result?.results?.length ?? 0;
       if (!opts?.silent) {
         toast.push(
           "success",
-          n > 0
-            ? `Found ${n} provider${n === 1 ? "" : "s"}`
+          matched > 0
+            ? `Matched ${matched} provider${matched === 1 ? "" : "s"}`
             : "No providers matched filters",
         );
       }
@@ -109,6 +141,22 @@ export function App() {
     } finally {
       setBusy(false);
     }
+  }
+
+  function changeSort(sortBy: ProviderSortBy) {
+    const next = withSearchDefaults(filters, {
+      sort_by: sortBy,
+      sort_dir: "desc",
+      offset: 0,
+    });
+    void runSearch(next);
+  }
+
+  function goPage(direction: -1 | 1) {
+    const limit = filters.limit ?? DEFAULT_PAGE_SIZE;
+    const offset = filters.offset ?? 0;
+    const nextOffset = Math.max(0, offset + direction * limit);
+    void runSearch(withSearchDefaults(filters, { offset: nextOffset }));
   }
 
   async function runExplain(tx: string) {
@@ -210,7 +258,7 @@ export function App() {
             onSubmit={(e) => {
               e.preventDefault();
               setShowPresets(false);
-              void runSearch(filters);
+              void runSearch(withSearchDefaults(filters, { offset: 0 }));
             }}
           >
             <label className="intent-label" htmlFor="intent">
@@ -230,13 +278,16 @@ export function App() {
                     // are open and the user is deliberately composing both.
                     setFilters((f) =>
                       showAdvanced
-                        ? { ...f, query: q }
-                        : {
+                        ? { ...f, query: q, offset: 0 }
+                        : withSearchDefaults({
                             query: q,
                             minimum_verified_jobs: 0,
                             minimum_completion_rate: 0,
                             minimum_confidence: "unverified",
-                          },
+                            sort_by: f.sort_by,
+                            sort_dir: f.sort_dir,
+                            limit: f.limit,
+                          }),
                     );
                   }}
                   placeholder="e.g. CCTP cross-chain settlement on Arc"
@@ -269,9 +320,14 @@ export function App() {
                             }
                             onClick={() => {
                               setActiveScenario(s.id);
-                              setFilters(s.filters);
+                              const next = withSearchDefaults(s.filters, {
+                                sort_by: filters.sort_by,
+                                sort_dir: filters.sort_dir,
+                                limit: filters.limit,
+                                offset: 0,
+                              });
                               setShowPresets(false);
-                              void runSearch(s.filters);
+                              void runSearch(next);
                             }}
                           >
                             <span className="example-label">{s.label}</span>
@@ -297,20 +353,39 @@ export function App() {
             </div>
           </form>
 
-          <button
-            type="button"
-            className="advanced-toggle"
-            onClick={() => setShowAdvanced((v) => !v)}
-          >
-            {showAdvanced ? "Hide" : "Show"} structured filters
-          </button>
+          <div className="search-toolbar">
+            <label className="sort-control">
+              Sort by
+              <select
+                className="tx-input sort-select"
+                value={filters.sort_by ?? "score"}
+                disabled={busy || !liveOk}
+                onChange={(e) =>
+                  changeSort(e.target.value as ProviderSortBy)
+                }
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              className="advanced-toggle"
+              onClick={() => setShowAdvanced((v) => !v)}
+            >
+              {showAdvanced ? "Hide" : "Show"} structured filters
+            </button>
+          </div>
 
           {showAdvanced ? (
             <form
               className="filter-form"
               onSubmit={(e) => {
                 e.preventDefault();
-                void runSearch(filters);
+                void runSearch(withSearchDefaults(filters, { offset: 0 }));
               }}
             >
               <label>
@@ -392,6 +467,39 @@ export function App() {
               selectedId={selected?.provider_id ?? null}
               onSelect={setSelected}
             />
+            {typeof search.result?.total_matched === "number" &&
+            search.result.total_matched > 0 ? (
+              <div className="pager">
+                <span className="pager-meta">
+                  {(() => {
+                    const total = search.result.total_matched ?? 0;
+                    const offset = search.result.offset ?? 0;
+                    const pageLen = results.length;
+                    const start = pageLen === 0 ? 0 : offset + 1;
+                    const end = offset + pageLen;
+                    return `${start}–${end} of ${total}`;
+                  })()}
+                </span>
+                <div className="pager-actions">
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    disabled={busy || (filters.offset ?? 0) <= 0}
+                    onClick={() => goPage(-1)}
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    disabled={busy || !search.result.has_more}
+                    onClick={() => goPage(1)}
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </section>
         ) : null}
 

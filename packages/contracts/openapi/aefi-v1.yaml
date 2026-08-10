@@ -133,11 +133,10 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties: true
+              $ref: "#/components/schemas/ProviderSearchRequest"
       responses:
         "200":
-          description: Search results
+          description: Search results (paginated). `result` includes results plus total_matched, offset, limit, sort_by, sort_dir, has_more.
           content:
             application/json:
               schema:
@@ -145,6 +144,43 @@ paths:
 
 components:
   schemas:
+    ProviderSearchRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        query:
+          type: string
+          description: Natural-language capability intent (semantic recall)
+        capability:
+          type: string
+        minimum_verified_jobs:
+          type: number
+        minimum_completion_rate:
+          type: number
+        minimum_confidence:
+          $ref: "#/components/schemas/Confidence"
+        sort_by:
+          type: string
+          enum: [score, verified_jobs, completion_rate, recent]
+          default: score
+          description: Backend sort key after scoring; stable tie-break on provider_id
+        sort_dir:
+          type: string
+          enum: [asc, desc]
+          default: desc
+        limit:
+          type: number
+          minimum: 1
+          maximum: 100
+          default: 25
+        offset:
+          type: number
+          minimum: 0
+          default: 0
+        semantic_top_k:
+          type: number
+          minimum: 1
+          maximum: 50
     Confidence:
       type: string
       enum: [high, medium, low, unverified]

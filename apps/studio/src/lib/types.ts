@@ -126,7 +126,20 @@ export interface ProviderSearchResult {
   interpreted_filters: Record<string, unknown>;
   results: ProviderResult[];
   graph_provider_count?: number;
+  total_matched?: number;
+  offset?: number;
+  limit?: number;
+  sort_by?: ProviderSortBy;
+  sort_dir?: ProviderSortDir;
+  has_more?: boolean;
 }
+
+export type ProviderSortBy =
+  | "score"
+  | "verified_jobs"
+  | "completion_rate"
+  | "recent";
+export type ProviderSortDir = "asc" | "desc";
 
 export interface ProviderSearchFilters {
   query?: string;
@@ -134,7 +147,10 @@ export interface ProviderSearchFilters {
   minimum_verified_jobs?: number;
   minimum_completion_rate?: number;
   minimum_confidence?: Confidence;
+  sort_by?: ProviderSortBy;
+  sort_dir?: ProviderSortDir;
   limit?: number;
+  offset?: number;
   semantic_top_k?: number;
 }
 

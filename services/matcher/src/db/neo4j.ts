@@ -46,10 +46,12 @@ export class GraphStore {
     try {
       await session.executeWrite(async (tx) => {
         const byLabel = new Map<string, GraphNode[]>();
+        const idToLabel = new Map<string, string>();
         for (const node of batch.nodes) {
           const list = byLabel.get(node.label) ?? [];
           list.push(node);
           byLabel.set(node.label, list);
+          idToLabel.set(node.id, node.label);
         }
         for (const [label, nodes] of byLabel) {
           for (const chunk of chunked(nodes, WRITE_CHUNK)) {
@@ -77,21 +79,80 @@ export class GraphStore {
         }
         for (const [type, edges] of byType) {
           for (const chunk of chunked(edges, WRITE_CHUNK)) {
-            await tx.run(
-              `
-              UNWIND $rows AS row
-              MATCH (a {id: row.from}), (b {id: row.to})
-              MERGE (a)-[r:${type}]->(b)
-              SET r += row.props
-              `,
-              {
-                rows: chunk.map((e) => ({
+            // Prefer labeled MATCH so uniqueness constraints are used.
+            // Fall back to unlabeled MATCH when endpoint labels are unknown
+            // (should be rare — nodes are written before edges in the same txn).
+            const labeled: Array<{
+              from: string;
+              to: string;
+              fromLabel: string;
+              toLabel: string;
+              props: Record<string, unknown>;
+            }> = [];
+            const unlabeled: Array<{
+              from: string;
+              to: string;
+              props: Record<string, unknown>;
+            }> = [];
+            for (const e of chunk) {
+              const fromLabel = idToLabel.get(e.from);
+              const toLabel = idToLabel.get(e.to);
+              if (fromLabel && toLabel) {
+                labeled.push({
+                  from: e.from,
+                  to: e.to,
+                  fromLabel,
+                  toLabel,
+                  props: e.props ?? {},
+                });
+              } else {
+                unlabeled.push({
                   from: e.from,
                   to: e.to,
                   props: e.props ?? {},
-                })),
-              },
-            );
+                });
+              }
+            }
+
+            // Group labeled edges by endpoint label pair for valid Cypher.
+            const byPair = new Map<string, typeof labeled>();
+            for (const row of labeled) {
+              const key = `${row.fromLabel}->${row.toLabel}`;
+              const list = byPair.get(key) ?? [];
+              list.push(row);
+              byPair.set(key, list);
+            }
+            for (const [, rows] of byPair) {
+              const fromLabel = rows[0]!.fromLabel;
+              const toLabel = rows[0]!.toLabel;
+              await tx.run(
+                `
+                UNWIND $rows AS row
+                MATCH (a:${fromLabel} {id: row.from}), (b:${toLabel} {id: row.to})
+                MERGE (a)-[r:${type}]->(b)
+                SET r += row.props
+                `,
+                {
+                  rows: rows.map((r) => ({
+                    from: r.from,
+                    to: r.to,
+                    props: r.props,
+                  })),
+                },
+              );
+            }
+
+            if (unlabeled.length > 0) {
+              await tx.run(
+                `
+                UNWIND $rows AS row
+                MATCH (a {id: row.from}), (b {id: row.to})
+                MERGE (a)-[r:${type}]->(b)
+                SET r += row.props
+                `,
+                { rows: unlabeled },
+              );
+            }
           }
         }
       });

@@ -42,6 +42,8 @@ async function main() {
         const result = await projectOnce(events, graph, cfg.batchSize);
         if (result.advanced) {
           console.log("projected", result);
+          // Catch up without sleeping between advancing pages.
+          continue;
         }
       } catch (err) {
         console.error("projectOnce failed; will retry", err);
