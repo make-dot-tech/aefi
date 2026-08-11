@@ -23,6 +23,8 @@ export class EventStore {
   readonly pool: pg.Pool;
   readonly chainId: string;
   readonly cursorId: string;
+  private agentWalletCache: { at: number; wallets: Set<string> } | null = null;
+  private static readonly AGENT_WALLET_CACHE_MS = 60_000;
 
   constructor(databaseUrl: string, chainId: string) {
     this.pool = new Pool({ connectionString: databaseUrl });
@@ -155,6 +157,75 @@ export class EventStore {
       [ids],
     );
     return rows.map(normalizeDecoded) as Erc8004Row[];
+  }
+
+  /**
+   * Wallets known as agent settlement endpoints: ERC-8004 agentWallet metadata
+   * and ERC-8183 client/provider/evaluator parties. Cached briefly to avoid
+   * re-scanning every poll while still picking up new agents quickly.
+   */
+  async fetchKnownAgentWallets(): Promise<Set<string>> {
+    const now = Date.now();
+    if (
+      this.agentWalletCache &&
+      now - this.agentWalletCache.at < EventStore.AGENT_WALLET_CACHE_MS
+    ) {
+      return this.agentWalletCache.wallets;
+    }
+
+    const { rows } = await this.pool.query<{ addr: string }>(
+      `SELECT DISTINCT lower(addr) AS addr
+       FROM (
+         SELECT payload->>'client' AS addr
+         FROM evt_erc8183 e
+         JOIN evt_base b ON b.id = e.id
+         WHERE b.chain_id = $1 AND payload ? 'client'
+         UNION ALL
+         SELECT payload->>'provider'
+         FROM evt_erc8183 e
+         JOIN evt_base b ON b.id = e.id
+         WHERE b.chain_id = $1 AND payload ? 'provider'
+         UNION ALL
+         SELECT payload->>'evaluator'
+         FROM evt_erc8183 e
+         JOIN evt_base b ON b.id = e.id
+         WHERE b.chain_id = $1 AND payload ? 'evaluator'
+         UNION ALL
+         SELECT b.decoded->>'client'
+         FROM evt_erc8183 e
+         JOIN evt_base b ON b.id = e.id
+         WHERE b.chain_id = $1 AND b.decoded ? 'client'
+         UNION ALL
+         SELECT b.decoded->>'provider'
+         FROM evt_erc8183 e
+         JOIN evt_base b ON b.id = e.id
+         WHERE b.chain_id = $1 AND b.decoded ? 'provider'
+         UNION ALL
+         SELECT b.decoded->>'evaluator'
+         FROM evt_erc8183 e
+         JOIN evt_base b ON b.id = e.id
+         WHERE b.chain_id = $1 AND b.decoded ? 'evaluator'
+         UNION ALL
+         SELECT CASE
+           WHEN lower(coalesce(payload->>'metadataValue', '')) LIKE '0x%'
+             THEN '0x' || right(substr(lower(payload->>'metadataValue'), 3), 40)
+           WHEN length(coalesce(payload->>'metadataValue', '')) >= 40
+             THEN '0x' || right(lower(payload->>'metadataValue'), 40)
+           ELSE NULL
+         END
+         FROM evt_erc8004 e
+         JOIN evt_base b ON b.id = e.id
+         WHERE b.chain_id = $1
+           AND e.event_kind = 'MetadataSet'
+           AND payload->>'metadataKey' = 'agentWallet'
+       ) s
+       WHERE addr ~* '^0x[a-f0-9]{40}$'`,
+      [this.chainId],
+    );
+
+    const wallets = new Set(rows.map((r) => r.addr.toLowerCase()));
+    this.agentWalletCache = { at: now, wallets };
+    return wallets;
   }
 }
 

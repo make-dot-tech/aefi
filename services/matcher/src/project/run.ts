@@ -39,12 +39,14 @@ export async function projectOnce(
   }
 
   const ids = page.map((r) => r.id);
-  const [transfers, memosInPage, jobs, agents] = await Promise.all([
-    events.fetchTransfersByIds(ids),
-    events.fetchMemosByIds(ids),
-    events.fetchErc8183ByIds(ids),
-    events.fetchErc8004ByIds(ids),
-  ]);
+  const [transfers, memosInPage, jobs, agents, knownAgentWallets] =
+    await Promise.all([
+      events.fetchTransfersByIds(ids),
+      events.fetchMemosByIds(ids),
+      events.fetchErc8183ByIds(ids),
+      events.fetchErc8004ByIds(ids),
+      events.fetchKnownAgentWallets(),
+    ]);
 
   // Same-tx memos may sit at a lower log_index already projected; still join.
   const txHashes = [...new Set(transfers.map((t) => t.tx_hash))];
@@ -53,7 +55,13 @@ export async function projectOnce(
   for (const m of [...memosInPage, ...memosForTx]) memosById.set(m.id, m);
   const memos = [...memosById.values()];
 
-  const batch = runCorrelators({ transfers, memos, jobs, agents });
+  const batch = runCorrelators({
+    transfers,
+    memos,
+    jobs,
+    agents,
+    knownAgentWallets,
+  });
   await graph.apply(batch);
 
   const last = page[page.length - 1]!;

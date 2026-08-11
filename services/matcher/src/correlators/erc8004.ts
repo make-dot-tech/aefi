@@ -5,6 +5,7 @@ import {
   type ProjectionBatch,
 } from "../types.js";
 import { parseAgentUri } from "./agentUri.js";
+import { extractAgentWallet } from "./agentWallets.js";
 
 export function correlateErc8004(rows: Erc8004Row[]): ProjectionBatch {
   const batch = emptyBatch();
@@ -137,22 +138,6 @@ export function correlateErc8004(rows: Erc8004Row[]): ProjectionBatch {
   }
 
   return batch;
-}
-
-function extractAgentWallet(row: Erc8004Row): string | null {
-  const p = row.payload ?? {};
-  if (row.event_kind === "MetadataSet") {
-    const key = String(p.metadataKey ?? "");
-    if (key === "agentWallet" && typeof p.metadataValue === "string") {
-      const hex = p.metadataValue.startsWith("0x")
-        ? p.metadataValue.slice(2)
-        : p.metadataValue;
-      if (hex.length >= 40) {
-        return `0x${hex.slice(-40)}`;
-      }
-    }
-  }
-  return null;
 }
 
 function extractOwner(row: Erc8004Row): string | null {

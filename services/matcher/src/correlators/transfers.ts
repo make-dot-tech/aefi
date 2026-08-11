@@ -5,12 +5,34 @@ import {
   type ProjectionBatch,
   type TransferRow,
 } from "../types.js";
+import { isAgentRelatedTransfer } from "./agentWallets.js";
 
-/** Payment + wallets + transfer nodes for system USDC settlements. */
-export function correlateTransfers(rows: TransferRow[]): ProjectionBatch {
+export interface TransferCorrelateOpts {
+  /** Lowercase 0x wallets known as ERC-8004 agentWallet or ERC-8183 parties. */
+  agentWallets: Set<string>;
+  /** Tx hashes tied to jobs (8183 events or memos with job id). */
+  agentRelatedTxHashes: Set<string>;
+}
+
+/** Payment + wallets + transfer nodes for agent-related system USDC settlements. */
+export function correlateTransfers(
+  rows: TransferRow[],
+  opts: TransferCorrelateOpts,
+): ProjectionBatch {
   const batch = emptyBatch();
   for (const t of rows) {
     if (t.emitter_role !== "system_usdc") continue;
+    if (
+      !isAgentRelatedTransfer(
+        t.from_addr,
+        t.to_addr,
+        t.tx_hash,
+        opts.agentWallets,
+        opts.agentRelatedTxHashes,
+      )
+    ) {
+      continue;
+    }
 
     const xferId = ids.transfer(t.id);
     const payId = ids.payment(t.chain_id, t.tx_hash, t.log_index);
@@ -94,6 +116,7 @@ export function correlateTransfers(rows: TransferRow[]): ProjectionBatch {
 export function correlateMemoTransfers(
   transfers: TransferRow[],
   memos: MemoRow[],
+  opts: TransferCorrelateOpts,
 ): ProjectionBatch {
   const batch = emptyBatch();
   const memosByTx = new Map<string, MemoRow[]>();
@@ -105,6 +128,17 @@ export function correlateMemoTransfers(
 
   for (const t of transfers) {
     if (t.emitter_role !== "system_usdc") continue;
+    if (
+      !isAgentRelatedTransfer(
+        t.from_addr,
+        t.to_addr,
+        t.tx_hash,
+        opts.agentWallets,
+        opts.agentRelatedTxHashes,
+      )
+    ) {
+      continue;
+    }
     const related = memosByTx.get(t.tx_hash);
     if (!related?.length) continue;
 

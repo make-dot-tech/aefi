@@ -1,15 +1,19 @@
 # aefi matcher
 
 **Status**: Draft
-**Last updated**: 2026-08-08
+**Last updated**: 2026-08-11
 
 Projects Postgres canonical events into the Neo4j evidence graph.
+
+Postgres still indexes the full system-USDC stream. Neo4j only projects
+**agent-related** payments: transfers that touch ERC-8004 `agentWallet` /
+ERC-8183 job parties, or share a tx with an 8183 job event / job-id memo.
 
 ## Correlators (#3)
 
 | Name | Effect |
 | --- | --- |
-| `transfers_payments` | System USDC → `Payment`/`TransferEvent`/`Wallet` + `SETTLED_BY` |
+| `transfers_payments` | Agent-related system USDC → `Payment`/`TransferEvent`/`Wallet` + `SETTLED_BY` |
 | `memo_transfer_same_tx` | Same `tx_hash` Memo → `ANNOTATED_BY` (+ `FOR_JOB` if job id in memo) |
 | `erc8183_job_lifecycle` | Job nodes, party agents, outcomes |
 | `erc8004_identity` | Agent nodes + reputation/identity evidence |
