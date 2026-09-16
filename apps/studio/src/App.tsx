@@ -34,6 +34,7 @@ const HOME_URL =
   location.hostname === "localhost" || location.hostname === "127.0.0.1"
     ? "http://localhost:5174/"
     : "https://aefi.io";
+const SOCIAL_URL = "https://x.com/aefi_io";
 
 const SORT_OPTIONS: { value: ProviderSortBy; label: string }[] = [
   { value: "score", label: "Relevance" },
@@ -582,7 +583,10 @@ export function App() {
 
       <footer className="footer">
         Agents call aefi over HTTP / MCP · pick counterparties with evidence ·{" "}
-        <a href={DOCS_URL}>docs</a> · <a href={HOME_URL}>aefi.io</a>
+        <a href={DOCS_URL}>docs</a> · <a href={HOME_URL}>aefi.io</a> ·{" "}
+        <a href={SOCIAL_URL} rel="me">
+          @aefi_io
+        </a>
       </footer>
     </div>
   );

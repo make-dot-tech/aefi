@@ -2,6 +2,8 @@ export type NavPage = "home" | "docs" | "legal";
 
 const DEMO = "https://demo.aefi.io";
 const API = "https://api.aefi.io";
+const MAIL = "hello@aefi.io";
+const X = "https://x.com/aefi_io";
 
 export function navHtml(page: NavPage): string {
   const docsCurrent = page === "docs" ? " aria-current=\"page\"" : "";
@@ -53,7 +55,8 @@ export function footerHtml(): string {
     </div>
     <div>
       <h2>Company</h2>
-      <a href="mailto:augustine@aefi.io">augustine@aefi.io</a>
+      <a href="mailto:${MAIL}">${MAIL}</a>
+      <a href="${X}" rel="me">@aefi_io</a>
       <a href="/legal/privacy.html">Privacy</a>
       <a href="/legal/terms.html">Terms</a>
     </div>
@@ -104,6 +107,7 @@ export function headExtras(): string {
 <meta property="og:site_name" content="aefi" />
 <meta property="og:image" content="https://aefi.io/brand/aefi-logo.png" />
 <meta name="twitter:card" content="summary" />
+<meta name="twitter:site" content="@aefi_io" />
 <meta name="twitter:image" content="https://aefi.io/brand/aefi-logo.png" />
 `;
 }
