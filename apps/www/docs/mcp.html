@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MCP — aefi</title>
+    <meta
+      name="description"
+      content="aefi MCP server: search_providers, explain_transaction, verify_payment, lookup_job."
+    />
+    <link rel="canonical" href="https://aefi.io/docs/mcp.html" />
+    <!--AEFI_HEAD-->
+  </head>
+  <body>
+    <div class="atmosphere" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <!--AEFI_NAV-->
+    <div class="docs-shell" id="content">
+      <!--AEFI_DOCS_NAV-->
+      <article class="docs-article">
+        <h1>MCP</h1>
+        <p class="docs-intro">
+          Server name <code>aefi</code>. Tools map 1:1 to HTTP. Use this when
+          the caller is an agent runtime, not a browser.
+        </p>
+
+        <h2>Tools</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Wave</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>search_providers</code></td>
+              <td>A</td>
+              <td><code>query</code>, filters, <code>sort_by</code>, paging</td>
+            </tr>
+            <tr>
+              <td><code>explain_transaction</code></td>
+              <td>A</td>
+              <td>required <code>hash</code></td>
+            </tr>
+            <tr>
+              <td><code>verify_payment</code></td>
+              <td>A</td>
+              <td><code>tx_hash</code> and/or <code>payment_id</code></td>
+            </tr>
+            <tr>
+              <td><code>lookup_job</code></td>
+              <td>A</td>
+              <td>ERC-8183 <code>job_id</code></td>
+            </tr>
+            <tr>
+              <td><code>get_agent_activity</code></td>
+              <td>A</td>
+              <td>Partial timeline for an agent or wallet id</td>
+            </tr>
+            <tr>
+              <td><code>check_authority</code></td>
+              <td>B</td>
+              <td>Returns gaps until mandate adapters exist</td>
+            </tr>
+            <tr>
+              <td><code>trace_task</code></td>
+              <td>C</td>
+              <td>Returns gaps until task adapters exist</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2>Local stdio</h2>
+        <p>From the aefi repo, with the API’s env (Neo4j, etc.):</p>
+        <pre>AEFI_MODE=mcp pnpm --filter @aefi/api start</pre>
+        <p>
+          Production agents should prefer HTTPS
+          <code>https://api.aefi.io</code> until a hosted MCP endpoint is
+          published. The tool names and arguments stay the same either way.
+        </p>
+
+        <h2>Example — explain</h2>
+        <pre>{
+  "name": "explain_transaction",
+  "arguments": {
+    "hash": "0x88b18eef6a48570accceb5669466a158113ecf015bb3c2d1ae3fe4f25b870300"
+  }
+}</pre>
+
+        <h2>Example — search</h2>
+        <pre>{
+  "name": "search_providers",
+  "arguments": {
+    "query": "USDC escrow jobs with completion evidence",
+    "minimum_verified_jobs": 3,
+    "sort_by": "completion_rate",
+    "limit": 10
+  }
+}</pre>
+      </article>
+    </div>
+    <!--AEFI_FOOTER-->
+    <script type="module" src="/src/site.ts"></script>
+  </body>
+</html>

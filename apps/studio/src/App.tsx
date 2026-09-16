@@ -26,6 +26,14 @@ import type {
 } from "./lib/types";
 
 const DEFAULT_PAGE_SIZE = 25;
+const DOCS_URL =
+  location.hostname === "localhost" || location.hostname === "127.0.0.1"
+    ? "http://localhost:5174/docs/"
+    : "https://aefi.io/docs/";
+const HOME_URL =
+  location.hostname === "localhost" || location.hostname === "127.0.0.1"
+    ? "http://localhost:5174/"
+    : "https://aefi.io";
 
 const SORT_OPTIONS: { value: ProviderSortBy; label: string }[] = [
   { value: "score", label: "Relevance" },
@@ -218,11 +226,14 @@ export function App() {
       <div className="grain" aria-hidden="true" />
 
       <header className="topbar">
-        <a className="top-brand" href="https://aefi.io" aria-label="aefi">
+        <a className="top-brand" href={HOME_URL} aria-label="aefi">
           <img src="/brand/aefi-icon.png" alt="" width="36" height="36" />
         </a>
         <span className="top-meta">
           Evidence Studio · counterparty intelligence
+          <a className="top-docs" href={DOCS_URL}>
+            docs
+          </a>
           <span className={`mode-pill is-${mode}`}>{mode}</span>
           {busy || explainBusy || verifyBusy ? (
             <Spinner size="sm" label="working" />
@@ -570,8 +581,8 @@ export function App() {
       </main>
 
       <footer className="footer">
-        Agents call aefi over HTTP / MCP · pick counterparties with evidence ·
-        x402 gated · <a href="https://aefi.io">aefi.io</a>
+        Agents call aefi over HTTP / MCP · pick counterparties with evidence ·{" "}
+        <a href={DOCS_URL}>docs</a> · <a href={HOME_URL}>aefi.io</a>
       </footer>
     </div>
   );

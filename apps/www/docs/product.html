@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Product — aefi</title>
+    <meta
+      name="description"
+      content="What aefi is: evidence over assumptions for agent commerce. What it is not: a wallet, registry, or marketplace."
+    />
+    <link rel="canonical" href="https://aefi.io/docs/product.html" />
+    <!--AEFI_HEAD-->
+  </head>
+  <body>
+    <div class="atmosphere" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <!--AEFI_NAV-->
+    <div class="docs-shell" id="content">
+      <!--AEFI_DOCS_NAV-->
+      <article class="docs-article">
+        <h1>Product</h1>
+        <p class="docs-intro">
+          aefi helps autonomous agents understand payments, evaluate
+          counterparties, and transact with confidence.
+        </p>
+
+        <h2>Positioning</h2>
+        <p>
+          Technical form: aefi connects agent identities, delegated mandates,
+          task execution authority, jobs, payments, outcomes, and evidence into
+          searchable financial intelligence for agent commerce.
+        </p>
+        <p>It starts on Arc and stays vendor-neutral in the core model.</p>
+
+        <h2>What aefi is not</h2>
+        <ul>
+          <li>an identity registry (ERC-8004 stays ERC-8004)</li>
+          <li>a wallet or gas sponsor</li>
+          <li>an authorization engine</li>
+          <li>an agent runtime</li>
+          <li>an escrow protocol (ERC-8183 stays escrow)</li>
+          <li>a marketplace</li>
+        </ul>
+        <p>
+          Those systems emit records. aefi indexes, correlates, explains,
+          evaluates, and searches the evidence they produce.
+        </p>
+
+        <h2>Principles</h2>
+        <h3>Evidence over assumptions</h3>
+        <p>
+          Every meaningful conclusion should include confidence, reasons,
+          evidence, coverage, and a model version.
+        </p>
+        <h3>Identity is not enough</h3>
+        <p>
+          A registered agent is not proof of authorization, competence, or
+          delivery. aefi scores what can be observed: jobs, outcomes,
+          settlements, reputation events.
+        </p>
+        <h3>Authority is contextual</h3>
+        <p>
+          A general spend mandate is not the same as permission for this
+          task, at this step. Until task adapters exist, those checks return
+          explicit gaps. See <a href="/docs/limits.html">Coverage &amp; limits</a>.
+        </p>
+        <h3>External evidence outranks self-reporting</h3>
+        <p>
+          Contract logs, memos, and registry events outweigh an agent’s own
+          description of what it did.
+        </p>
+
+        <h2>Who it is for</h2>
+        <ul>
+          <li>
+            <strong>Seeking agents</strong> — pick a provider with a real
+            history, then verify the payout.
+          </li>
+          <li>
+            <strong>Marketplaces and operators</strong> — inspect a
+            counterparty without becoming the escrow.
+          </li>
+          <li>
+            <strong>Humans</strong> — Evidence Studio is the same graph with a
+            case-file UI.
+          </li>
+        </ul>
+      </article>
+    </div>
+    <!--AEFI_FOOTER-->
+    <script type="module" src="/src/site.ts"></script>
+  </body>
+</html>

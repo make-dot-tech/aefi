@@ -1,9 +1,9 @@
 # aefi www (aefi.io)
 
-**Status**: Draft
-**Last updated**: 2026-08-08
+**Status**: Active
+**Last updated**: 2026-09-15
 
-Minimal brand apex for **aefi.io**. Product UI lives elsewhere; hackathon demo is `demo.aefi.io`.
+Brand apex for **aefi.io**: landing, product docs, legal. Evidence Studio stays on `demo.aefi.io`.
 
 ## Run
 
@@ -12,12 +12,23 @@ pnpm --filter @aefi/www dev
 # → http://localhost:5174
 ```
 
-Brand assets: `public/brand/*` symlinks to repo [`assets/`](../../assets). Favicon uses `aefi-icon.png`; hero uses `aefi-logo.png`. Base background is `#0A0A0A` to match the marks.
+Brand assets: `public/brand/*` symlinks to repo [`assets/`](../../assets). Favicon uses `aefi-icon.png`; wordmark uses `aefi-logo.png`. Base background is `#0A0A0A`.
+
+## Pages
+
+| Path | Content |
+| --- | --- |
+| `/` | Landing |
+| `/docs/` | Docs hub |
+| `/docs/*.html` | Quickstart, product, evidence, API, MCP, studio, Arc, architecture, limits |
+| `/legal/` | Privacy, terms |
+| `/404.html` | Missing path |
+
+Shared chrome is injected at build via `src/chrome.ts`.
 
 ## Deploy
 
 | Host | App |
 | --- | --- |
-| `aefi.io` / `www.aefi.io` | this package (`dist/`) |
+| `aefi.io` / `www.aefi.io` | this package (`dist/`) via `deploy/Dockerfile.www` |
 | `demo.aefi.io` | `@aefi/studio` |
-| `hackathon.aefi.io` | CNAME → `demo.aefi.io` (optional) |

@@ -49,7 +49,7 @@ Production layout: [`deploy/README.md`](deploy/README.md).
 - Wave A API on graph evidence (provider search, explain, verify, MCP)  
 - Drools confidence disposition service  
 - x402 paywall gate (off by default in prod)  
-- Evidence Studio + brand www  
+- Evidence Studio + brand site / docs on `aefi.io`  
 - GCP deploy (`aefi-io`): Cloud Run, Cloud SQL, Cloudflare Tunnel, Cloud Build on `main`
 
 ### Planned

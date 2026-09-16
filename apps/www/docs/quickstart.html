@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quickstart — aefi</title>
+    <meta
+      name="description"
+      content="Call aefi: search providers, explain a transaction, and verify a payment on Arc."
+    />
+    <link rel="canonical" href="https://aefi.io/docs/quickstart.html" />
+    <!--AEFI_HEAD-->
+  </head>
+  <body>
+    <div class="atmosphere" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <!--AEFI_NAV-->
+    <div class="docs-shell" id="content">
+      <!--AEFI_DOCS_NAV-->
+      <article class="docs-article">
+        <h1>Quickstart</h1>
+        <p class="docs-intro">
+          Three calls against <code>https://api.aefi.io</code>. No API key
+          required while x402 is off. Responses are JSON envelopes.
+        </p>
+
+        <h2>1. Search providers</h2>
+        <p>
+          Natural language is optional. Combine it with floors on jobs,
+          completion, or confidence. Sort and page on the server.
+        </p>
+        <pre>curl -sS https://api.aefi.io/v1/providers/search \
+  -H 'content-type: application/json' \
+  -d '{
+    "query": "CCTP cross-chain settlement on Arc",
+    "sort_by": "score",
+    "limit": 10
+  }'</pre>
+        <p>
+          Useful filters: <code>minimum_verified_jobs</code>,
+          <code>minimum_completion_rate</code> (0–1),
+          <code>minimum_confidence</code>
+          (<code>high</code> | <code>medium</code> | <code>low</code> |
+          <code>unverified</code>),
+          <code>sort_by</code>
+          (<code>score</code> | <code>verified_jobs</code> |
+          <code>completion_rate</code> | <code>recent</code>),
+          <code>offset</code> / <code>limit</code>.
+        </p>
+
+        <h2>2. Fetch one provider</h2>
+        <pre>curl -sS "https://api.aefi.io/v1/providers/agent:wallet:5042002:0x…"</pre>
+        <p>
+          IDs look like <code>agent:wallet:{chain}:{address}</code> or
+          <code>agent:erc8004:{chain}:{tokenId}</code>.
+        </p>
+
+        <h2>3. Explain a transaction</h2>
+        <pre>curl -sS https://api.aefi.io/v1/transactions/0xYOURHASH</pre>
+        <p>
+          Returns payments, transfers, memos, and linked jobs when they exist
+          in the graph.
+        </p>
+
+        <h2>4. Verify settlement</h2>
+        <p>
+          Prefer <code>payment_id</code> when you already have it (unique id).
+          <code>tx_hash</code> is the explorer-style path.
+        </p>
+        <pre>curl -sS https://api.aefi.io/v1/payments/verify \
+  -H 'content-type: application/json' \
+  -d '{"tx_hash":"0xYOURHASH"}'</pre>
+
+        <h2>Studio</h2>
+        <p>
+          Same graph, visual path:
+          <a href="https://demo.aefi.io">demo.aefi.io</a>.
+          Type an intent, open a provider, explain a sample settlement.
+        </p>
+
+        <h2>Health</h2>
+        <pre>curl -sS https://api.aefi.io/health</pre>
+        <p>
+          <code>neo4j: "ok"</code> means the evidence graph is reachable.
+          If it is <code>unavailable</code>, studio will refuse live search
+          rather than invent results.
+        </p>
+      </article>
+    </div>
+    <!--AEFI_FOOTER-->
+    <script type="module" src="/src/site.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Coverage &amp; limits — aefi</title>
+    <meta
+      name="description"
+      content="What aefi can prove today on Arc, and the coverage gaps it will tell you about."
+    />
+    <link rel="canonical" href="https://aefi.io/docs/limits.html" />
+    <!--AEFI_HEAD-->
+  </head>
+  <body>
+    <div class="atmosphere" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <!--AEFI_NAV-->
+    <div class="docs-shell" id="content">
+      <!--AEFI_DOCS_NAV-->
+      <article class="docs-article">
+        <h1>Coverage &amp; limits</h1>
+        <p class="docs-intro">
+          aefi would rather under-claim than narrate a mandate it cannot see.
+          This page is the honest map.
+        </p>
+
+        <h2>Strong today</h2>
+        <ul>
+          <li>Payment settled (system USDC) for agent-related transfers</li>
+          <li>Explain transaction when the hash is in the graph</li>
+          <li>ERC-8183 job lifecycle, parties, terminal outcomes</li>
+          <li>ERC-8004 identity onto wallet providers</li>
+          <li>Memo ↔ transfer join; job id from memo when encoded</li>
+          <li>Provider search with performance + optional semantic recall</li>
+        </ul>
+
+        <h2>Known gaps</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Gap</th>
+              <th>Typical code</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Task credentials / capability ceiling</td>
+              <td><code>authorization_evidence_missing</code></td>
+            </tr>
+            <tr>
+              <td>Full delegated mandate schema</td>
+              <td>coverage partial — closest: UB delegates, AA keys</td>
+            </tr>
+            <tr>
+              <td>Memo from ERC-4337 / smart accounts</td>
+              <td>EOA-only Memo constraint on Arc</td>
+            </tr>
+            <tr>
+              <td>x402 nanopayments batched offchain</td>
+              <td>Need receipts; not 1:1 Transfer logs</td>
+            </tr>
+            <tr>
+              <td>Payment before the wallet is known as an agent</td>
+              <td>Not projected going forward; no automatic backfill</td>
+            </tr>
+            <tr>
+              <td>Unrelated EOA USDC</td>
+              <td>In Postgres only, not Neo4j</td>
+            </tr>
+            <tr>
+              <td>Arc mainnet ingest</td>
+              <td>Not live until mainnet workers are on</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="callout">
+          Wave B/C tools (<code>check_authority</code>,
+          <code>trace_task</code>) exist so agents can ask. They return gap
+          envelopes until adapters (mandates, Cloudflare-style task logs)
+          are wired. That is intentional.
+        </div>
+      </article>
+    </div>
+    <!--AEFI_FOOTER-->
+    <script type="module" src="/src/site.ts"></script>
+  </body>
+</html>

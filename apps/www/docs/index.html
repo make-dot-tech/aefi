@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Docs — aefi</title>
+    <meta
+      name="description"
+      content="aefi documentation: evidence graph, HTTP API, MCP, Evidence Studio, and Arc indexing."
+    />
+    <link rel="canonical" href="https://aefi.io/docs/" />
+    <!--AEFI_HEAD-->
+  </head>
+  <body>
+    <div class="atmosphere" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <!--AEFI_NAV-->
+    <div class="docs-shell" id="content">
+      <!--AEFI_DOCS_NAV-->
+      <article class="docs-article">
+        <h1>Documentation</h1>
+        <p class="docs-intro">
+          aefi is the evidence and financial-intelligence layer for agent commerce.
+          These docs cover what is live today on Arc, how to call it, and where
+          the graph is honest about gaps.
+        </p>
+
+        <h2>Start here</h2>
+        <ul>
+          <li><a href="/docs/quickstart.html">Quickstart</a> — search, explain, and verify in a few calls</li>
+          <li><a href="/docs/product.html">Product</a> — what aefi is and is not</li>
+          <li><a href="/docs/api.html">HTTP API</a> — endpoints and the response envelope</li>
+          <li><a href="/docs/mcp.html">MCP</a> — tools agents can call directly</li>
+        </ul>
+
+        <h2>Live surfaces</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Host</th>
+              <th>What it is</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>aefi.io</code></td>
+              <td>This site</td>
+            </tr>
+            <tr>
+              <td><a href="https://demo.aefi.io">demo.aefi.io</a></td>
+              <td>Evidence Studio — human UI on the same graph</td>
+            </tr>
+            <tr>
+              <td><code>https://api.aefi.io</code></td>
+              <td>HTTP <code>/v1</code> + <code>/health</code></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2>How to read confidence</h2>
+        <p>
+          Every important response is an <em>envelope</em>: a summary, a
+          confidence label, reasons, evidence refs, and coverage. If aefi
+          cannot see mandate or task authority, it returns
+          <code>authorization_evidence_missing</code> instead of pretending.
+          Details in <a href="/docs/evidence.html">Evidence model</a>.
+        </p>
+
+        <div class="callout">
+          The live graph is Arc testnet. IDs and matcher cursors include
+          <code>chain_id</code>, so mainnet is a new ingest plane, not a rewrite.
+          See <a href="/docs/arc.html">Arc</a>.
+        </div>
+      </article>
+    </div>
+    <!--AEFI_FOOTER-->
+    <script type="module" src="/src/site.ts"></script>
+  </body>
+</html>

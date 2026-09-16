@@ -128,6 +128,17 @@ main,
   text-transform: uppercase;
 }
 
+.top-docs {
+  color: var(--mist);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.top-docs:hover {
+  color: var(--mint);
+}
+
 .mode-pill {
   padding: 0.2rem 0.5rem;
   border-radius: 2px;

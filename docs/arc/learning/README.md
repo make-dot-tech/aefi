@@ -1,11 +1,11 @@
 # Arc Learning Notes
 
 **Status**: Draft
-**Last updated**: 2026-08-06
+**Last updated**: 2026-08-14
 
 Working notes from Arc official docs ([docs.arc.io](https://docs.arc.io/)), focused on what aefi needs to index, correlate, and explain.
 
-This set covers Arc L1 mechanics, indexing primitives, App Kits / Gateway / x402 payment rails, and ERC-8004/8183 agent commerce. Start with [aefi-implications.md](./aefi-implications.md) for the synthesis.
+This set covers Arc L1 mechanics, indexing primitives, App Kits / Gateway / x402 payment rails, ERC-8004/8183 agent commerce, and ecosystem spotlights (e.g. physical M2M payments). Start with [aefi-implications.md](./aefi-implications.md) for the synthesis.
 
 ## Documents
 
@@ -30,6 +30,7 @@ This set covers Arc L1 mechanics, indexing primitives, App Kits / Gateway / x402
 | [agentic-economy.md](./agentic-economy.md) | Arc agent stack overview (8004/8183/AA) |
 | [erc-8004.md](./erc-8004.md) | EIP-8004 identity / reputation / validation |
 | [erc-8183.md](./erc-8183.md) | EIP-8183 job escrow state machine + events |
+| [tlay-m2m-nanopayments.md](./tlay-m2m-nanopayments.md) | TLAY physical device USDC nanopayments on Arc |
 | [aefi-implications.md](./aefi-implications.md) | How Arc maps onto the aefi v1 spec |
 
 ## Doc convention

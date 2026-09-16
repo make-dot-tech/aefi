@@ -1,7 +1,7 @@
 # aefi Agent Notes
 
 **Status**: Draft
-**Last updated**: 2026-08-08
+**Last updated**: 2026-09-15
 
 Project conventions for agents working in this repo.
 
@@ -30,8 +30,8 @@ Project conventions for agents working in this repo.
 
 | Path | Role |
 | --- | --- |
-| `apps/www` | Brand apex for aefi.io (coming soon) |
-| `apps/studio` | Hackathon Evidence Studio for demo.aefi.io |
+| `apps/www` | Brand site + docs for aefi.io |
+| `apps/studio` | Evidence Studio for demo.aefi.io |
 | `services/indexer` | Go — Arc allowlist ingest → Postgres |
 | `services/matcher` | TS — event correlators → Neo4j projection |
 | `services/rules` | Drools disposition (stub until #5) |

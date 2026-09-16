@@ -3,48 +3,290 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>aefi — financial intelligence for the agent economy</title>
+    <title>aefi — evidence for agent commerce</title>
     <meta
       name="description"
-      content="aefi is the evidence and financial-intelligence layer for agent commerce on Arc."
+      content="aefi is the evidence and financial-intelligence layer for agent commerce on Arc. Search providers, explain settlements, and verify payments with confidence."
     />
-    <link rel="icon" type="image/png" href="/brand/aefi-icon.png" />
-    <link rel="apple-touch-icon" href="/brand/aefi-icon.png" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
+    <link rel="canonical" href="https://aefi.io/" />
+    <meta property="og:title" content="aefi — evidence for agent commerce" />
+    <meta
+      property="og:description"
+      content="Search providers, explain settlements, and verify payments with evidence — not assumptions."
     />
-    <link rel="stylesheet" href="/src/styles.css" />
+    <meta property="og:url" content="https://aefi.io/" />
+    <!--AEFI_HEAD-->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "aefi",
+        "url": "https://aefi.io",
+        "applicationCategory": "BusinessApplication",
+        "description": "Evidence and financial-intelligence layer for agent commerce on Arc.",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      }
+    </script>
   </head>
   <body>
     <div class="atmosphere" aria-hidden="true"></div>
     <div class="grain" aria-hidden="true"></div>
-    <main class="hero">
-      <h1 class="brand">
-        <img
-          class="brand-logo"
-          src="/brand/aefi-logo.png"
-          alt="aefi"
-          width="144"
-          height="144"
-        />
-      </h1>
-      <p class="tagline">Financial intelligence for the agent economy.</p>
-      <p class="status">Product coming soon.</p>
-      <p class="demo-link">
-        <a href="https://demo.aefi.io">Arc hackathon demo →</a>
-      </p>
+    <!--AEFI_NAV-->
+    <main id="content">
+      <div class="wrap">
+        <section class="hero">
+          <div>
+            <p class="kicker">Financial intelligence · Arc</p>
+            <p class="brand">
+              <img
+                class="brand-logo"
+                src="/brand/aefi-logo.png"
+                alt="aefi"
+                width="144"
+                height="144"
+              />
+            </p>
+            <h1>Settlement is not evidence.</h1>
+            <p class="lede">
+              USDC moving is easy to see. Which agent acted, for which job, and
+              whether the record is complete is not. aefi is the evidence
+              layer for agent commerce on Arc.
+            </p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" data-demo-href href="https://demo.aefi.io"
+                >Open Evidence Studio</a
+              >
+              <a class="btn btn-ghost" href="/docs/">Read the docs</a>
+            </div>
+            <div class="hero-meta">
+              <span class="chip is-live">Arc testnet</span>
+              <span class="chip" data-api-health>checking graph…</span>
+              <span class="chip">HTTP + MCP</span>
+            </div>
+          </div>
+          <aside class="plate" aria-label="What aefi returns">
+            <h2>Every answer carries</h2>
+            <ul class="plate-rows">
+              <li><span>01</span>confidence</li>
+              <li><span>02</span>controlled reasons</li>
+              <li><span>03</span>supporting evidence</li>
+              <li><span>04</span>coverage + known gaps</li>
+              <li><span>05</span>model version</li>
+            </ul>
+          </aside>
+        </section>
+
+        <section class="section" id="problem">
+          <p class="section-label">The gap</p>
+          <h2>A transfer is not a story.</h2>
+          <p class="section-lead">
+            Agent commerce splinters identity, jobs, payments, and outcomes
+            across registries, escrow, memos, and wallets. aefi joins those
+            records so a seeking agent can evaluate a counterparty before it
+            pays.
+          </p>
+          <ol class="docket">
+            <li><span class="idx">01</span>Which agent initiated the payment?</li>
+            <li><span class="idx">02</span>Which job or service was it for?</li>
+            <li><span class="idx">03</span>Was the deliverable accepted?</li>
+            <li><span class="idx">04</span>How has this provider performed before?</li>
+            <li><span class="idx">05</span>What evidence supports each claim?</li>
+            <li><span class="idx">06</span>What is still unobserved?</li>
+          </ol>
+        </section>
+
+        <section class="section" id="product">
+          <p class="section-label">Product</p>
+          <h2>Three tools. One evidence graph.</h2>
+          <p class="section-lead">
+            Humans use Evidence Studio. Agents call the same graph over HTTP
+            or MCP. aefi is not a wallet, registry, escrow, or marketplace —
+            those systems create records. aefi indexes, connects, and
+            explains them.
+          </p>
+          <div class="caps">
+            <article class="cap">
+              <span class="cap-num">01 · search</span>
+              <h3>Find providers with a track record</h3>
+              <p>
+                Natural-language intent plus job, outcome, and settlement
+                evidence. Ranked, paginated, with confidence on every row.
+              </p>
+            </article>
+            <article class="cap">
+              <span class="cap-num">02 · explain</span>
+              <h3>Turn a tx hash into a case file</h3>
+              <p>
+                Transfers, memos, jobs, and parties as an ordered narrative —
+                not a raw explorer dump.
+              </p>
+            </article>
+            <article class="cap">
+              <span class="cap-num">03 · verify</span>
+              <h3>Confirm settlement against the graph</h3>
+              <p>
+                Look up by transaction hash or payment id. See what linked,
+                and what coverage is still missing.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        <section class="section" id="how">
+          <p class="section-label">How it is built</p>
+          <h2>Postgres for the stream. Graph for the case.</h2>
+          <p class="section-lead">
+            The full Arc event stream stays in Postgres. Neo4j holds
+            agent-related evidence: identities, jobs, and the payments that
+            touch them.
+          </p>
+          <div class="flow">
+            <div class="flow-step">
+              <strong>01 Index</strong>
+              <p>
+                Allowlisted Arc contracts — system USDC, memos, ERC-8004,
+                ERC-8183 — decoded into Postgres.
+              </p>
+            </div>
+            <div class="flow-step">
+              <strong>02 Correlate</strong>
+              <p>
+                Matcher joins same-tx memos, job parties, and agent wallets
+                into a projection batch.
+              </p>
+            </div>
+            <div class="flow-step">
+              <strong>03 Graph</strong>
+              <p>
+                Agents, jobs, payments, outcomes, and evidence edges — queryable,
+                chain-scoped.
+              </p>
+            </div>
+            <div class="flow-step">
+              <strong>04 Disposition</strong>
+              <p>
+                API and MCP return an envelope: summary, confidence, reasons,
+                evidence, known gaps.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section" id="envelope">
+          <p class="section-label">Envelope</p>
+          <h2>No conclusion without coverage.</h2>
+          <p class="section-lead">
+            High confidence is rare on purpose. If mandate or task authority
+            is not in the graph, aefi says so instead of inventing it.
+          </p>
+          <div class="code-panel">
+            <div class="code-head">
+              POST /v1/providers/search
+              <button type="button" data-copy="#env-sample">Copy</button>
+            </div>
+            <pre id="env-sample">{
+  "summary": "12 providers matched “CCTP settlement on Arc”.",
+  "confidence": "medium",
+  "confidence_reasons": [
+    "erc_8183_job_lifecycle",
+    "payment_settled"
+  ],
+  "confidence_model_version": "0.1.0",
+  "coverage": {
+    "status": "partial",
+    "known_gaps": ["authorization_evidence_missing"]
+  },
+  "evidence": [],
+  "result": { "total_matched": 12, "sort_by": "score" }
+}</pre>
+          </div>
+        </section>
+
+        <section class="section" id="agents">
+          <p class="section-label">For agents</p>
+          <h2>Call aefi the way you call any tool.</h2>
+          <p class="section-lead">
+            Same capabilities on HTTP <code>https://api.aefi.io</code> and
+            MCP server <code>aefi</code>. x402 gating is built in and off by
+            default until you turn it on.
+          </p>
+          <table class="tools">
+            <thead>
+              <tr>
+                <th>Tool</th>
+                <th>HTTP</th>
+                <th>What you get</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>search_providers</code></td>
+                <td><code>POST /v1/providers/search</code></td>
+                <td>Semantic + structured provider recall</td>
+              </tr>
+              <tr>
+                <td><code>explain_transaction</code></td>
+                <td><code>GET /v1/transactions/{hash}</code></td>
+                <td>Evidence-backed settlement narrative</td>
+              </tr>
+              <tr>
+                <td><code>verify_payment</code></td>
+                <td><code>POST /v1/payments/verify</code></td>
+                <td>Settlement lookup by tx or payment id</td>
+              </tr>
+              <tr>
+                <td><code>lookup_job</code></td>
+                <td><code>GET /v1/jobs/{job_id}</code></td>
+                <td>ERC-8183 job, parties, outcomes</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="section-lead">
+            <a href="/docs/mcp.html">MCP reference</a>
+            ·
+            <a href="/docs/api.html">HTTP reference</a>
+          </p>
+        </section>
+
+        <section class="section" id="arc">
+          <p class="section-label">Arc</p>
+          <h2>Built on the rails Arc is shipping.</h2>
+          <p class="section-lead">
+            System USDC transfers, transaction memos, ERC-8004 identity, and
+            ERC-8183 jobs. When Arc mainnet opens, the graph model is already
+            keyed by chain. Today the live studio reads Arc testnet evidence.
+          </p>
+          <div class="split">
+            <ul class="yes-list">
+              <li>System USDC as settlement truth</li>
+              <li>Memos as job / invoice / payout context</li>
+              <li>8004 identity onto job providers</li>
+              <li>8183 lifecycle and outcomes</li>
+            </ul>
+            <ul class="not-list">
+              <li>Not a chain explorer</li>
+              <li>Not every unbound USDC transfer in the graph</li>
+              <li>Not task-level authority until adapters exist</li>
+              <li>Not a replacement for 8004 / 8183 themselves</li>
+            </ul>
+          </div>
+        </section>
+
+        <div class="cta-band">
+          <div>
+            <p class="section-label">Try it</p>
+            <h2>Search a provider. Explain a settlement.</h2>
+          </div>
+          <div class="hero-actions">
+            <a class="btn btn-primary" data-demo-href href="https://demo.aefi.io"
+              >Evidence Studio</a
+            >
+            <a class="btn btn-ghost" href="/docs/quickstart.html">Quickstart</a>
+          </div>
+        </div>
+      </div>
     </main>
-    <script>
-      (function () {
-        var host = location.hostname;
-        if (host === "localhost" || host === "127.0.0.1") {
-          var a = document.querySelector(".demo-link a");
-          if (a) a.setAttribute("href", "http://localhost:5173");
-        }
-      })();
-    </script>
+    <!--AEFI_FOOTER-->
+    <script type="module" src="/src/site.ts"></script>
   </body>
 </html>

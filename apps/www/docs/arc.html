@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Arc — aefi</title>
+    <meta
+      name="description"
+      content="What aefi indexes on Arc: system USDC, memos, ERC-8004, ERC-8183. Testnet now, chain-scoped for mainnet."
+    />
+    <link rel="canonical" href="https://aefi.io/docs/arc.html" />
+    <!--AEFI_HEAD-->
+  </head>
+  <body>
+    <div class="atmosphere" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <!--AEFI_NAV-->
+    <div class="docs-shell" id="content">
+      <!--AEFI_DOCS_NAV-->
+      <article class="docs-article">
+        <h1>Arc</h1>
+        <p class="docs-intro">
+          aefi is built for Arc’s agent-commerce stack: stablecoin settlement,
+          memos, identity, and jobs. Live ingest today is Arc testnet
+          (<code>5042002</code>).
+        </p>
+
+        <h2>Allowlist (P0)</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Family</th>
+              <th>Address</th>
+              <th>Why</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>System USDC Transfer</td>
+              <td><code>0xff…fe</code></td>
+              <td>EIP-7708 settlement truth, 18 decimals</td>
+            </tr>
+            <tr>
+              <td>Memo / BeforeMemo</td>
+              <td><code>0x5294…e505</code></td>
+              <td>Invoice / job / payout context on the same tx</td>
+            </tr>
+            <tr>
+              <td>ERC-8004 identity</td>
+              <td><code>0x8004A818…BD9e</code></td>
+              <td>Agent identity NFT</td>
+            </tr>
+            <tr>
+              <td>ERC-8004 reputation</td>
+              <td><code>0x8004B663…8713</code></td>
+              <td>Feedback events</td>
+            </tr>
+            <tr>
+              <td>ERC-8004 validation</td>
+              <td><code>0x8004Cb1B…4272</code></td>
+              <td>Validation registry</td>
+            </tr>
+            <tr>
+              <td>ERC-8183</td>
+              <td><code>0x0747…4583</code></td>
+              <td>Job lifecycle + escrow</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2>Memos</h2>
+        <p>
+          Arc transaction memos attach structured context to a call without
+          changing the target contract. aefi joins <code>Memo</code> to
+          system USDC by <code>tx_hash</code>, and lifts <code>job_id</code>
+          from decoded payload when present. Memo must be invoked by an EOA;
+          AA callers are a known gap.
+        </p>
+
+        <h2>What goes in the graph</h2>
+        <p>
+          Postgres stores the allowlisted stream, including USDC. Neo4j only
+          projects payments that touch known agent wallets (8004
+          <code>agentWallet</code> / 8183 parties) or share a tx with a job
+          event / job-id memo. That keeps the evidence graph on agent commerce
+          instead of every testnet transfer.
+        </p>
+
+        <h2>Mainnet</h2>
+        <p>
+          Graph ids and matcher watermarks are <code>chain_id</code>-scoped.
+          Turning on Arc mainnet is a new indexer + matcher worker against the
+          mainnet allowlist, not a new product. This site will say testnet
+          until that worker is live.
+        </p>
+
+        <h2>Rules we enforce</h2>
+        <ul>
+          <li>Prefer system emitter Transfer; do not double-count ERC-20 USDC.</li>
+          <li>Order by <code>(block, log_index)</code>.</li>
+          <li>Attribute Memo activity to the original sender.</li>
+          <li>Gas is not a Transfer.</li>
+        </ul>
+      </article>
+    </div>
+    <!--AEFI_FOOTER-->
+    <script type="module" src="/src/site.ts"></script>
+  </body>
+</html>

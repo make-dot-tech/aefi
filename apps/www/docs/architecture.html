@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Architecture — aefi</title>
+    <meta
+      name="description"
+      content="aefi architecture: indexer to Postgres, matcher to Neo4j, API and MCP, Evidence Studio."
+    />
+    <link rel="canonical" href="https://aefi.io/docs/architecture.html" />
+    <!--AEFI_HEAD-->
+  </head>
+  <body>
+    <div class="atmosphere" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <!--AEFI_NAV-->
+    <div class="docs-shell" id="content">
+      <!--AEFI_DOCS_NAV-->
+      <article class="docs-article">
+        <h1>Architecture</h1>
+        <p class="docs-intro">
+          Hard rule: indexer writes Postgres only. Matcher projects Neo4j.
+          API serves the graph. Studio is a client.
+        </p>
+
+        <h2>Services</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Piece</th>
+              <th>Role</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Indexer (Go)</td>
+              <td>Allowlisted <code>eth_getLogs</code> → typed Postgres events</td>
+            </tr>
+            <tr>
+              <td>Matcher (TS)</td>
+              <td>Correlators → Neo4j nodes/edges; watermark on <code>evt_base</code></td>
+            </tr>
+            <tr>
+              <td>API (TS)</td>
+              <td>Hono HTTP + MCP; optional x402; disposition via rules or local composer</td>
+            </tr>
+            <tr>
+              <td>Rules</td>
+              <td>Drools disposition; API falls back if it is down</td>
+            </tr>
+            <tr>
+              <td>Studio</td>
+              <td>Vite app on <code>demo.aefi.io</code></td>
+            </tr>
+            <tr>
+              <td>www</td>
+              <td>This site on <code>aefi.io</code></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2>Public path</h2>
+        <pre>Browser → Cloudflare (DNS / WAF / Tunnel)
+  ├─ aefi.io          → www
+  ├─ demo.aefi.io     → studio
+  └─ api.aefi.io      → API → Neo4j Aura
+Indexer / matcher → Cloud SQL Postgres</pre>
+
+        <h2>Correlators</h2>
+        <ul>
+          <li><code>transfers_payments</code> — agent-related system USDC → Payment</li>
+          <li><code>memo_transfer_same_tx</code> — Memo annotates payment; job id when present</li>
+          <li><code>erc8183_job_lifecycle</code> — jobs, parties, outcomes</li>
+          <li><code>erc8004_identity</code> — agent nodes + wallet link</li>
+        </ul>
+
+        <h2>Disposition</h2>
+        <p>
+          Fact payloads go to <code>POST /v1/disposition</code> on the rules
+          service. If that call fails or is disabled, a local TypeScript
+          composer labels confidence. The envelope always names
+          <code>confidence_model_version</code>.
+        </p>
+      </article>
+    </div>
+    <!--AEFI_FOOTER-->
+    <script type="module" src="/src/site.ts"></script>
+  </body>
+</html>

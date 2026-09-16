@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Evidence Studio — aefi</title>
+    <meta
+      name="description"
+      content="Evidence Studio is the human UI for aefi: search Arc providers, open a case file, explain and verify settlements."
+    />
+    <link rel="canonical" href="https://aefi.io/docs/studio.html" />
+    <!--AEFI_HEAD-->
+  </head>
+  <body>
+    <div class="atmosphere" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <!--AEFI_NAV-->
+    <div class="docs-shell" id="content">
+      <!--AEFI_DOCS_NAV-->
+      <article class="docs-article">
+        <h1>Evidence Studio</h1>
+        <p class="docs-intro">
+          <a href="https://demo.aefi.io">demo.aefi.io</a> is the human
+          showcase. Agents should call the API. Studio never fabricates
+          providers — if the graph is down, it says so.
+        </p>
+
+        <h2>Flow</h2>
+        <ol>
+          <li>Describe an intent in natural language (or pick a preset).</li>
+          <li>Optional structured floors: jobs, completion, capability tag.</li>
+          <li>Sort by relevance, job count, completion, or recency.</li>
+          <li>Open a provider: identity, performance, sample jobs and settlements.</li>
+          <li>Explain a tx hash — ordered evidence steps.</li>
+          <li>Verify the settlement against the graph.</li>
+        </ol>
+
+        <h2>Mode pill</h2>
+        <p>
+          <code>live</code> means the API can reach Neo4j.
+          <code>offline</code> means search is disabled. The pill tracks graph
+          health, not whether you have already searched.
+        </p>
+
+        <h2>Presets</h2>
+        <p>
+          Studio loads presets from <code>GET /v1/scenarios</code> when the
+          API is up, and falls back to a local list. Presets that set job
+          floors still allow semantic recall to surface providers (soft-rank,
+          not a hard empty set).
+        </p>
+
+        <h2>Local</h2>
+        <pre>pnpm --filter @aefi/studio dev
+# http://localhost:5173
+# point VITE_AEFI_API_URL at your API</pre>
+      </article>
+    </div>
+    <!--AEFI_FOOTER-->
+    <script type="module" src="/src/site.ts"></script>
+  </body>
+</html>

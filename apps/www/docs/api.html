@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HTTP API — aefi</title>
+    <meta
+      name="description"
+      content="aefi HTTP API: health, provider search, explain transaction, verify payment, jobs, activity."
+    />
+    <link rel="canonical" href="https://aefi.io/docs/api.html" />
+    <!--AEFI_HEAD-->
+  </head>
+  <body>
+    <div class="atmosphere" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <!--AEFI_NAV-->
+    <div class="docs-shell" id="content">
+      <!--AEFI_DOCS_NAV-->
+      <article class="docs-article">
+        <h1>HTTP API</h1>
+        <p class="docs-intro">
+          Base URL: <code>https://api.aefi.io</code>. JSON in, envelope out.
+          CORS allows <code>aefi.io</code> and <code>demo.aefi.io</code>.
+        </p>
+
+        <h2>Auth</h2>
+        <p>
+          x402 is implemented and <strong>off</strong> in production today
+          (<code>GET /health</code> reports <code>x402: "off"</code>). When
+          enabled, missing payment returns <code>402</code> with
+          <code>PAYMENT-REQUIRED</code>. A configured
+          <code>x-aefi-api-key</code> can bypass for humans.
+        </p>
+
+        <h2>Endpoints</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Method</th>
+              <th>Path</th>
+              <th>Purpose</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>GET</td>
+              <td><code>/health</code></td>
+              <td>Liveness + Neo4j connectivity</td>
+            </tr>
+            <tr>
+              <td>POST</td>
+              <td><code>/v1/providers/search</code></td>
+              <td>Provider search (NL + filters + sort/page)</td>
+            </tr>
+            <tr>
+              <td>GET</td>
+              <td><code>/v1/providers/:id</code></td>
+              <td>Single provider performance envelope</td>
+            </tr>
+            <tr>
+              <td>GET</td>
+              <td><code>/v1/transactions/:hash</code></td>
+              <td>Explain transaction</td>
+            </tr>
+            <tr>
+              <td>POST</td>
+              <td><code>/v1/payments/verify</code></td>
+              <td>Verify by <code>tx_hash</code> or <code>payment_id</code></td>
+            </tr>
+            <tr>
+              <td>GET</td>
+              <td><code>/v1/jobs/:job_id</code></td>
+              <td>ERC-8183 job lookup</td>
+            </tr>
+            <tr>
+              <td>GET</td>
+              <td><code>/v1/agents/:id/activity</code></td>
+              <td>Observed activity (partial)</td>
+            </tr>
+            <tr>
+              <td>GET</td>
+              <td><code>/v1/scenarios</code></td>
+              <td>Studio search presets</td>
+            </tr>
+            <tr>
+              <td>POST</td>
+              <td><code>/v1/authority/check</code></td>
+              <td>Wave B — honest gap envelope</td>
+            </tr>
+            <tr>
+              <td>GET</td>
+              <td><code>/v1/tasks/:id</code></td>
+              <td>Wave C — honest gap envelope</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2>Search body</h2>
+        <pre>{
+  "query": "string, optional",
+  "capability": "optional exact tag",
+  "minimum_verified_jobs": 0,
+  "minimum_completion_rate": 0,
+  "minimum_confidence": "unverified",
+  "sort_by": "score",
+  "sort_dir": "desc",
+  "limit": 25,
+  "offset": 0,
+  "semantic_top_k": 20
+}</pre>
+        <p>
+          <code>result</code> includes <code>results</code>,
+          <code>total_matched</code>, <code>offset</code>,
+          <code>limit</code>, <code>sort_by</code>,
+          <code>sort_dir</code>, <code>has_more</code>.
+        </p>
+
+        <h2>Verify body</h2>
+        <pre>{
+  "tx_hash": "0x…",
+  "payment_id": "pay:5042002:0x…:13"
+}</pre>
+        <p>Send one identifier. <code>payment_id</code> is the faster unique lookup.</p>
+
+        <h2>Errors</h2>
+        <p>
+          Transport errors are HTTP status. “Not in graph” is still
+          <code>200</code> with <code>verified: false</code> or
+          <code>found: false</code> and coverage gaps — absence is a
+          first-class result.
+        </p>
+      </article>
+    </div>
+    <!--AEFI_FOOTER-->
+    <script type="module" src="/src/site.ts"></script>
+  </body>
+</html>

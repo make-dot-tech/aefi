@@ -53,7 +53,7 @@ Then open [http://localhost:5173](http://localhost:5173). Use an NL scenario (co
 ## Layout
 
 ```text
-apps/www           Brand apex (aefi.io) — Vite static
+apps/www           Landing + docs (aefi.io) — Vite MPA
 apps/studio        Hackathon Evidence Studio (demo.aefi.io)
 services/indexer   Go — Arc allowlist ingest → Postgres only
 services/matcher   TS — correlators → Neo4j projection
@@ -158,9 +158,9 @@ AEFI_MODE=mcp pnpm --filter @aefi/api start
 pnpm --filter @aefi/studio dev
 # → http://localhost:5173
 
-# terminal — brand apex (aefi.io locally)
+# terminal — landing + docs (aefi.io locally)
 pnpm --filter @aefi/www dev
-# → http://localhost:5174
+# → http://localhost:5174  (docs at /docs/)
 ```
 
 Studio shows **API/graph offline** when `:8787` is down or `/health` reports Neo4j unavailable — start API + Neo4j, refresh.

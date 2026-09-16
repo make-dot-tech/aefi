@@ -1,7 +1,7 @@
 # Production deployment
 
 **Status**: Draft  
-**Last updated**: 2026-08-08
+**Last updated**: 2026-09-15
 
 Cloud Run services use **`--ingress=internal`**. Public traffic reaches them only
 through a **Cloudflare Tunnel** on a GCE `cloudflared` VM.
@@ -10,8 +10,9 @@ GCP project: **`aefi-io`** (`us-central1`) — chosen to burn make.tech Cloud SQ
 Compute Flexible CUDs.
 
 **Phase 1 target:** Arc **testnet** (`5042002`) only. Shared Neo4j Aura + Cloud SQL
-are dual-network ready (graph IDs / matcher cursors include `chain_id`); mainnet
-Cloud Run services are not deployed yet.
+are dual-network ready (graph IDs / matcher cursors include `chain_id`). Mainnet
+workers are **not** created by the default trigger — follow
+[`mainnet.md`](./mainnet.md).
 
 ## Architecture
 
@@ -31,7 +32,7 @@ Indexer / matcher (internal Cloud Run workers)
 
 | Service | Platform | Notes |
 | --- | --- | --- |
-| `aefi-www` | Cloud Run | Vite static + nginx, internal ingress |
+| `aefi-www` | Cloud Run | Vite MPA (landing + docs) + nginx, internal ingress |
 | `aefi-studio` | Cloud Run | Vite static + nginx, baked `VITE_AEFI_API_URL` |
 | `aefi-api` | Cloud Run | Hono API, internal ingress |
 | `aefi-indexer` | Cloud Run | Always-on worker (`min=1`, no CPU throttle) |
@@ -111,18 +112,23 @@ and VPC connector `aefi-connector` (private ranges only).
 
 ## Shared Neo4j Aura
 
-Aura instance `c0c463f1` holds testnet (and later mainnet) nodes. Isolation is by
-`chain_id` on nodes + `ARC_CHAIN_ID` on API/matcher. Credentials live in Secret
-Manager (`AEFI-NEO4J-*`).
+Aura credentials live in Secret Manager (`AEFI-NEO4J-*`). Isolation is by
+`chain_id` on nodes + `ARC_CHAIN_ID` on API/matcher. Do not wipe the instance to
+cut over — see [`mainnet.md`](./mainnet.md).
 
-## Dual network (later)
+## Dual network
 
-| Dimension | Testnet (phase 1) | Mainnet (future) |
+See **[`mainnet.md`](./mainnet.md)** for the cutover playbook. Short version:
+new ABI pack + **new** indexer/matcher services; shared Postgres/Aura; flip
+`ARC_CHAIN_ID` on the API when the mainnet graph is ready. Do not truncate DBs.
+
+| Dimension | Testnet (phase 1) | Mainnet |
 | --- | --- | --- |
-| Cloud Run API | `aefi-api` | `aefi-api-mainnet` (or flip + side testnet) |
-| Workers | `aefi-indexer` / `aefi-matcher` | separate services |
-| `ARC_CHAIN_ID` | `5042002` | mainnet id |
+| Cloud Run API | `aefi-api` | flip `ARC_CHAIN_ID` **or** `aefi-api-mainnet` |
+| Workers | `aefi-indexer` / `aefi-matcher` | `aefi-indexer-mainnet` / `aefi-matcher-mainnet` |
+| `ARC_CHAIN_ID` | `5042002` | published mainnet id |
 | Matcher cursor | `neo4j:5042002` | `neo4j:<mainnet>` |
+| ABI dir | `/abi/5042002` | `/abi/<mainnet>` |
 | Postgres / Aura | shared | shared |
 
 ## Deploy

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Evidence model — aefi</title>
+    <meta
+      name="description"
+      content="aefi envelopes, confidence labels, coverage, and the graph objects behind them."
+    />
+    <link rel="canonical" href="https://aefi.io/docs/evidence.html" />
+    <!--AEFI_HEAD-->
+  </head>
+  <body>
+    <div class="atmosphere" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+    <!--AEFI_NAV-->
+    <div class="docs-shell" id="content">
+      <!--AEFI_DOCS_NAV-->
+      <article class="docs-article">
+        <h1>Evidence model</h1>
+        <p class="docs-intro">
+          aefi never returns a bare boolean as the product. The unit of
+          intelligence is an envelope.
+        </p>
+
+        <h2>Envelope</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>summary</code></td>
+              <td>One-line narrative a human or agent can read first</td>
+            </tr>
+            <tr>
+              <td><code>result</code></td>
+              <td>Tool-specific payload (search page, payments, job, …)</td>
+            </tr>
+            <tr>
+              <td><code>confidence</code></td>
+              <td><code>high</code> · <code>medium</code> · <code>low</code> · <code>unverified</code></td>
+            </tr>
+            <tr>
+              <td><code>confidence_reasons</code></td>
+              <td>Controlled fact codes, not free-form marketing copy</td>
+            </tr>
+            <tr>
+              <td><code>confidence_model_version</code></td>
+              <td>Which composer produced the label</td>
+            </tr>
+            <tr>
+              <td><code>evidence</code></td>
+              <td>Typed refs (source, reference, claims)</td>
+            </tr>
+            <tr>
+              <td><code>coverage</code></td>
+              <td><code>complete</code> / <code>substantial</code> / <code>partial</code> / <code>minimal</code> / <code>unknown</code> plus <code>known_gaps</code></td>
+            </tr>
+            <tr>
+              <td><code>graph_refs</code></td>
+              <td>Node ids when the API read Neo4j</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2>Graph objects (Wave A)</h2>
+        <p>Projected into Neo4j when they are agent-relevant:</p>
+        <ul>
+          <li><code>Agent</code> — ERC-8004 identity and/or provisional wallet agent</li>
+          <li><code>Wallet</code> — chain + address</li>
+          <li><code>Job</code> — ERC-8183 commerce job</li>
+          <li><code>Payment</code> — settled USDC (and 8183 <code>PaymentReleased</code>)</li>
+          <li><code>TransferEvent</code> — system USDC transfer</li>
+          <li><code>MemoEvent</code> — same-tx memo annotation</li>
+          <li><code>Outcome</code> — completed / rejected / expired</li>
+          <li><code>Evidence</code> — supporting node with typed claims</li>
+        </ul>
+        <p>
+          Edges include <code>CONTROLS</code>, <code>PROVIDER</code> /
+          <code>REQUESTER</code> / <code>EVALUATOR</code>,
+          <code>SETTLED_BY</code>, <code>FROM_WALLET</code> /
+          <code>TO_WALLET</code>, <code>ANNOTATED_BY</code>,
+          <code>FOR_JOB</code>, <code>HAS_OUTCOME</code>,
+          <code>SUPPORTS</code>.
+        </p>
+
+        <h2>Example fact codes</h2>
+        <ul>
+          <li><code>payment_settled</code> / <code>payment_only_observed</code></li>
+          <li><code>exact_job_id_memo</code></li>
+          <li><code>erc_8183_job_lifecycle</code></li>
+          <li><code>escrow_release_after_acceptance</code></li>
+          <li><code>erc_8004_identity_match</code></li>
+          <li><code>erc_8004_reputation_event</code></li>
+        </ul>
+
+        <h2>Provider scoring (studio / search)</h2>
+        <p>
+          Search ranks with completion (scaled by sample size so one perfect
+          job does not dominate), volume, optional recency, then a stable
+          <code>provider_id</code> tie-break. Semantic recall (when
+          <code>query</code> is set) is fused with that graph score.
+        </p>
+      </article>
+    </div>
+    <!--AEFI_FOOTER-->
+    <script type="module" src="/src/site.ts"></script>
+  </body>
+</html>

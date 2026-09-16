@@ -1,7 +1,7 @@
 # aefi Evidence Studio (demo.aefi.io)
 
-**Status**: Draft
-**Last updated**: 2026-08-08
+**Status**: Active
+**Last updated**: 2026-09-15
 
 Showcase UI for **provider counterparty intelligence** plus settlement explain/verify against the **live** Arc evidence graph. Brand apex is `aefi.io` (`@aefi/www`).
 

@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Stub: deploy a mainnet-side API once Arc mainnet ABI/RPC exist.
-# Mirrors urge's deploy-api-testnet.sh pattern (separate service, shared data).
+# Mainnet API/worker deploy is documented, not a one-liner yet.
+# See deploy/mainnet.md — wait for published chain id, RPC, and allowlist.
 set -euo pipefail
 
-echo "Mainnet deploy is not enabled yet (no mainnet ABI pack)." >&2
-echo "When ready: clone aefi-api → aefi-api-mainnet with ARC_CHAIN_ID=<mainnet>," >&2
-echo "separate indexer/matcher services, same AEFI-DATABASE-URL + Aura secrets." >&2
+echo "Mainnet is not a flag flip on the testnet trigger." >&2
+echo "Playbook: deploy/mainnet.md" >&2
+echo "Need: chain id, RPC, ABI pack under services/indexer/abi/<chainId>/," >&2
+echo "then separate aefi-indexer-mainnet / aefi-matcher-mainnet services." >&2
 exit 1
