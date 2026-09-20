@@ -3,7 +3,7 @@ info:
   title: aefi API
   version: 0.1.0
   summary: Evidence and financial intelligence for agent commerce
-  description: Read-only evidence API — verify payments, explain transactions, look up jobs, search providers. Paid per call in USDC via x402 / MPP.
+  description: Agents hire, pay, and settle without a human in the loop. aefi turns fragmented agent-economy records into decision-grade financial intelligence: evaluate counterparties, verify economic activity, and see what is proven versus still unknown.
   contact:
     name: aefi
     email: hello@aefi.io

@@ -709,6 +709,28 @@ main,
   max-width: 48rem;
 }
 
+.foot-badge {
+  margin: 0;
+}
+
+.circle-badge {
+  display: inline-flex;
+  align-items: center;
+  line-height: 0;
+  text-decoration: none;
+}
+
+.circle-badge img {
+  display: block;
+  height: 32px;
+  width: auto;
+  max-width: none;
+}
+
+.hero-meta .circle-badge img {
+  height: 28px;
+}
+
 .docs-shell {
   display: grid;
   grid-template-columns: 14.5rem minmax(0, 46rem);
@@ -776,6 +798,10 @@ main,
   color: var(--mist);
   margin: 0 0 2rem;
   font-size: 1.08rem;
+}
+
+.docs-badge {
+  margin: 0.75rem 0 0;
 }
 
 .docs-article h2 {

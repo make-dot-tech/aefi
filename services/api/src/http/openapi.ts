@@ -19,6 +19,9 @@ export const X_GUIDANCE =
   "Outputs: application/json AefiEnvelope { summary, confidence, confidence_reasons, evidence, coverage, result? }. Missing graph data is HTTP 200 with coverage gaps, not 404. " +
   "When to call: before trusting a provider, after a payment, or to explain onchain activity. Do not call to send funds, register agents, or write escrow — aefi does not mutate wallets, registries, or jobs.";
 
+export const INFO_DESCRIPTION =
+  "Agents hire, pay, and settle without a human in the loop. aefi turns fragmented agent-economy records into decision-grade financial intelligence: evaluate counterparties, verify economic activity, and see what is proven versus still unknown.";
+
 const CONFIDENCE = {
   type: "string",
   description: "Disposition confidence for the conclusion.",
@@ -61,8 +64,7 @@ export function getOpenApiDocument(): Record<string, unknown> {
       title: "aefi API",
       version: "0.1.0",
       summary: "Evidence and financial intelligence for agent commerce",
-      description:
-        "Read-only evidence API: verify payments, explain transactions, look up jobs, search providers. Paid per call in USDC via x402 / MPP.",
+      description: INFO_DESCRIPTION,
       contact: {
         name: "aefi",
         email: "hello@aefi.io",

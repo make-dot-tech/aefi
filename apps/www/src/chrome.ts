@@ -4,6 +4,14 @@ const DEMO = "https://demo.aefi.io";
 const API = "https://api.aefi.io";
 const MAIL = "hello@aefi.io";
 const X = "https://x.com/aefi_io";
+const CIRCLE_SCORE = "https://agents.circle.com/sell/score?url=api.aefi.io";
+const CIRCLE_BADGE = "https://agents.circle.com/sell/score/badge?url=api.aefi.io";
+
+export function circleBadgeHtml(): string {
+  return `<a class="circle-badge" href="${CIRCLE_SCORE}" rel="noreferrer">
+    <img src="${CIRCLE_BADGE}" alt="Accepts Agent Payments" height="32" />
+  </a>`;
+}
 
 export function navHtml(page: NavPage): string {
   const docsCurrent = page === "docs" ? " aria-current=\"page\"" : "";
@@ -65,6 +73,7 @@ export function footerHtml(): string {
     aefi indexes public Arc evidence. It is not a wallet, registry, escrow, or marketplace.
     Live graph is Arc testnet today; the model is chain-scoped for mainnet.
   </p>
+  <p class="foot-badge"><!--AEFI_CIRCLE_BADGE--></p>
 </footer>`;
 }
 

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { getOpenApiDocument, X_GUIDANCE, X_PAYMENT_INFO } from "./openapi.js";
+import { getOpenApiDocument, X_GUIDANCE, X_PAYMENT_INFO, INFO_DESCRIPTION } from "./openapi.js";
 
 const PAID_PATHS = [
   { path: "/v1/payments/verify", method: "post" },
@@ -44,6 +44,7 @@ describe("OpenAPI 3.1 agent catalog", () => {
     assert.equal(spec.openapi, "3.1.0");
     const info = asRecord(spec.info, "info");
     assert.equal(asRecord(info.contact, "contact").email, "hello@aefi.io");
+    assert.equal(info.description, INFO_DESCRIPTION);
     assert.equal(info["x-guidance"], X_GUIDANCE);
     assert.ok(String(info["x-guidance"]).length < 4000);
     assert.equal(

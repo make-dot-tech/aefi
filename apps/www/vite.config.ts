@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 import { readdirSync, statSync } from "node:fs";
 import { relative, resolve } from "node:path";
-import { docsNavHtml, footerHtml, headExtras, navHtml, type NavPage } from "./src/chrome";
+import { docsNavHtml, footerHtml, headExtras, navHtml, circleBadgeHtml, type NavPage } from "./src/chrome";
 
 const root = resolve(__dirname);
 
@@ -44,7 +44,8 @@ export default defineConfig({
         let out = html
           .replace("<!--AEFI_HEAD-->", headExtras())
           .replace("<!--AEFI_NAV-->", navHtml(kind))
-          .replace("<!--AEFI_FOOTER-->", footerHtml());
+          .replace("<!--AEFI_FOOTER-->", footerHtml())
+          .replaceAll("<!--AEFI_CIRCLE_BADGE-->", circleBadgeHtml());
         if (out.includes("<!--AEFI_DOCS_NAV-->")) {
           out = out.replace("<!--AEFI_DOCS_NAV-->", docsNavHtml(docsId(rel)));
         }
