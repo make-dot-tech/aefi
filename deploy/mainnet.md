@@ -1,7 +1,7 @@
 # Arc mainnet cutover playbook
 
 **Status**: Draft
-**Last updated**: 2026-09-15
+**Last updated**: 2026-09-16
 
 How to start indexing Arc **mainnet** without wiping testnet, and how to point
 studio/API at it. Do **not** treat this as “pause jobs, truncate both DBs, flip
@@ -10,18 +10,23 @@ the RPC.” That is the wrong model for this stack.
 Related: [README.md](./README.md) (prod layout), stub
 [`deploy-api-mainnet.sh`](./deploy-api-mainnet.sh).
 
-## Current production (2026-09-15)
+## Current production (2026-09-16)
 
-| Store | Contents |
+Cost pause while ERC-8004 / ERC-8183 mainnet addresses are unpublished.
+
+| Store / service | State |
 | --- | --- |
-| Cloud SQL `aefi-postgres` | Arc **testnet** events (`chain_id = 5042002`) |
-| Neo4j Aura | Rebuilding **testnet** graph from that Postgres stream |
-| Cloud Run `aefi-api` / `aefi-indexer` / `aefi-matcher` | `ARC_CHAIN_ID=5042002`, RPC `https://rpc.testnet.arc.io` |
+| Cloud SQL `aefi-postgres` | Still up. Testnet events (`chain_id = 5042002`) left in place. |
+| Neo4j Aura | **Paused** (resume when mainnet workers are ready) |
+| `aefi-indexer` / `aefi-matcher` | **Deleted** — do not recreate as testnet workers |
+| `aefi-api` / `aefi-studio` / `aefi-www` / `aefi-rules` | Still up. API `neo4j` health will be idle until Aura is resumed |
 | ABI pack | `services/indexer/abi/5042002/` only |
 
-There is **no** mainnet ABI pack, chain id, or RPC in-repo yet. The regional
-Cloud Build trigger on `main` still deploys the **testnet** stack
-(`deploy/cloudbuild.yaml` substitution `_CHAIN_ID=5042002`).
+Mainnet **chain id + RPC + Circle contracts** are published. There is still
+**no** in-repo `5042` ABI pack. [`cloudbuild.yaml`](./cloudbuild.yaml) still
+builds indexer/matcher **images** but must **not** deploy `aefi-indexer` /
+`aefi-matcher` (those steps were removed so a `main` push does not recreate
+the bill). `_CHAIN_ID` stays `5042002` until a real `5042` pack exists.
 
 ## Rules
 
@@ -45,21 +50,36 @@ API / studio serve whichever ARC_CHAIN_ID they are configured with.
 
 ## Gate — wait for Arc to publish
 
-Fill this table from official Arc mainnet docs (not guesswork):
+Filled from [Connect to Arc](https://docs.arc.io/arc/references/connect-to-arc),
+[contract addresses](https://docs.arc.io/arc/references/contract-addresses),
+[USDC system events](https://docs.arc.io/arc/references/usdc-system-events),
+and Arc docs assistant (2026-09-16). RPC `eth_chainId` on the primary endpoint
+returned `5042`. `eth_getCode` on 5042: Memo / USDC ERC-20 / CCTP / Gateway
+have bytecode; testnet 8004/8183 addresses return `0x`.
 
-| Item | Value | Notes |
+| Item | Value | On 5042? |
 | --- | --- | --- |
-| Chain id | _TBD_ | EVM id, not “arc-mainnet” string |
-| RPC | _TBD_ | Likely `https://rpc.arc.io` or similar — confirm |
-| Explorer | `https://arcscan.app` (studio already falls back here) | Confirm |
-| System USDC emitter | often `0xff…fe` | Confirm EIP-7708 emitter |
-| Memo | _TBD_ | Testnet was `0x5294…e505` |
-| ERC-8004 identity / reputation / validation | _TBD_ | Testnet `0x8004…` may or may not reuse |
-| ERC-8183 | _TBD_ | Testnet `0x0747…4583` will likely change |
-| Genesis / start block | `0` or first agent-commerce block | Set `INDEXER_START_BLOCK` if they say “start here” |
+| Chain id | `5042` | Yes |
+| RPC | `https://rpc.mainnet.arc.io` | Yes (public primary) |
+| Explorer | `https://explorer.arc.io` | Yes (not `arcscan.app`) |
+| System USDC emitter | `0xffffFFFfFFffffffffffffffFfFFFfffFFFfFFfE` | Yes — protocol-level, all Arc networks |
+| USDC ERC-20 | `0x3600000000000000000000000000000000000000` | Yes — same as testnet |
+| Memo | `0x5294E9927c3306DcBaDb03fe70b92e01cCede505` | Yes — same as testnet |
+| Multicall3From | `0x522fAf9A91c41c443c66765030741e4AaCe147D0` | Yes — same as testnet |
+| CCTP / Gateway domain | `26` | Yes — **addresses differ** from testnet |
+| ERC-8004 identity / reputation / validation | _unpublished_ | **Blocker.** Testnet `0x8004…` has no code on 5042. Do not copy. |
+| ERC-8183 | _unpublished_ | **Blocker.** Testnet `0x0747…4583` has no code on 5042. Do not copy. |
+| Genesis / start block | not documented | Start at `0` unless they publish otherwise |
 
-Until this table is real, **stop**. Shipping a guessed allowlist will index the
-wrong contracts.
+Until ERC-8004 and ERC-8183 mainnet addresses exist in official docs (or
+bytecode is confirmed at newly published addresses), **do not** ship a `5042`
+allowlist or `aefi-indexer-mainnet`. USDC + Memo alone would fill Postgres
+without agents/jobs.
+
+No deployment date or changelog entry exists (Arc docs assistant 2026-09-16).
+Watch [contract addresses](https://docs.arc.io/arc/references/contract-addresses)
+for a Mainnet tab on those registries — same pattern as CCTP/Gateway — then
+re-`eth_getCode` on 5042 before copying anything into `abi/5042/`.
 
 ## Path A (preferred): dual workers, then flip the API
 
@@ -161,8 +181,8 @@ at runtime.
    with `--build-arg VITE_ARC_CHAIN_ID=<mn>`). Until studio is rebuilt,
    explorer links may still assume testnet id `5042002` for the default,
    but `arcscan.app` is already the fallback for unknown ids.
-4. Scale testnet indexer/matcher to `min-instances=0` if you want to stop
-   paying for testnet ingest. **Leave the data.**
+4. Testnet ingest is already stopped — [Cost pause](#cost-pause-in-effect-2026-09-16).
+   **Leave the data.**
 
 **Safer cutover:** deploy `aefi-api-mainnet` with mainnet chain id, point a
 host (`api.aefi.io` or `api-mainnet.aefi.io`) at it, keep `aefi-api` on
@@ -193,10 +213,38 @@ If you do not want testnet in studio at all:
 
 1. Still add a **new** ABI pack + **new** workers (Path A steps 1–3).
 2. Flip API (+ studio build) to mainnet.
-3. Scale testnet workers to 0.
+3. Testnet ingest is already stopped — [Cost pause](#cost-pause-in-effect-2026-09-16).
 
 Postgres/Neo4j testnet rows can remain unused. Truncate only if you need disk
 back and you are sure you will never re-serve testnet.
+
+## Cost pause (in effect 2026-09-16)
+
+Done while waiting on mainnet ERC-8004 / ERC-8183:
+
+1. **Aura paused.** Resume it only when mainnet workers are about to start.
+2. **`aefi-indexer` and `aefi-matcher` deleted.** Next ingest is
+   `aefi-indexer-mainnet` / `aefi-matcher-mainnet` (Path A steps 2–3), not
+   recreation of the testnet service names.
+3. **Cloud Build** must not deploy `aefi-indexer` / `aefi-matcher`. Image
+   build+push stays. Restore those deploy steps only if you intentionally
+   bring testnet ingest back.
+
+Postgres rows and cursors (`indexer_cursor` / `neo4j:5042002`) stay. Do not
+wipe. Cloud SQL is still billed; stop the instance only if you also skip
+`run-migrate` in Cloud Build.
+
+`aefi-api` / `aefi-studio` / `aefi-www` / `aefi-rules` stay up.
+
+### Resume for mainnet
+
+1. Unpause Aura; wait until it accepts bolt.
+2. Ship `abi/5042/` after official 8004/8183 addresses + `eth_getCode`.
+3. `gcloud run deploy aefi-indexer-mainnet` / `aefi-matcher-mainnet` as in
+   Path A (same secrets, `ARC_CHAIN_ID=5042`,
+   `ARC_RPC_URL=https://rpc.mainnet.arc.io`).
+4. Flip API `ARC_CHAIN_ID=5042` when the graph has agents/jobs.
+5. `pnpm --filter @aefi/api embed:providers` with mainnet chain id.
 
 ## What “pause, wipe, flip RPC” would break
 
@@ -225,10 +273,11 @@ Studio: `demo.aefi.io` live pill, search, explain, explorer host is arcscan (not
 ## Rollback
 
 Set `aefi-api` `ARC_CHAIN_ID=5042002` again (and studio `_CHAIN_ID` on next
-build). Testnet workers still have their cursors if you did not wipe.
+build). Postgres cursors remain; testnet Cloud Run workers do not.
 
 ## Aura / cost
 
-Mainnet ingest is extra write load on the same Aura instance. Watch storage
-(8GB was the floor after testnet filled 2GB). Agent-only payment projection
-still applies. Pause Aura only if **both** matchers are scaled to 0.
+Aura is **paused** during the 8004/8183 wait. Resume before starting
+`aefi-matcher-mainnet`. Mainnet ingest is extra write load on the same
+instance — watch storage (8GB was the floor after testnet filled 2GB).
+Agent-only payment projection still applies.

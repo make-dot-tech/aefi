@@ -1,104 +1,59 @@
 import assert from "node:assert/strict";
-import { describe, it, beforeEach } from "node:test";
-import { b64json } from "./codec.js";
-import { loadX402Config } from "./config.js";
-import { x402Gate } from "./gate.js";
-import { resetNoncesForTests } from "./nonce.js";
+import { describe, it, beforeEach, afterEach } from "node:test";
+import { loadX402Config, isUsablePayTo } from "./config.js";
+import { paymentWwwAuthenticate } from "./mpp.js";
 
-function headers(init: Record<string, string> = {}) {
-  return new Headers(init);
-}
+const ENV_KEYS = [
+  "AEFI_X402_ENABLED",
+  "AEFI_API_KEY",
+  "AEFI_X402_PAY_TO",
+  "AEFI_X402_PRICE_USDC",
+  "AEFI_X402_PRICE_ATOMIC",
+  "AEFI_X402_FACILITATOR_URL",
+  "AEFI_X402_NETWORKS",
+  "AEFI_RESOURCE_BASE_URL",
+] as const;
 
-function validSig(payTo: string, value: string, nonce: string) {
-  return b64json({
-    x402Version: 2,
-    accepted: {
-      scheme: "exact",
-      network: "eip155:5042002",
-      maxAmountRequired: value,
-      resource: "http://localhost:8787/v1/payments/verify",
-      description: "test",
-      mimeType: "application/json",
-      payTo,
-      maxTimeoutSeconds: 60,
-      asset: "0x3600000000000000000000000000000000000000",
-      extra: {},
-    },
-    payload: {
-      signature: "0x" + "ab".repeat(65),
-      authorization: {
-        from: "0x1111111111111111111111111111111111111111",
-        to: payTo,
-        value,
-        validAfter: "0",
-        validBefore: "9999999999",
-        nonce,
-      },
-    },
-  });
-}
+const saved: Record<string, string | undefined> = {};
 
-describe("x402Gate", () => {
+describe("x402 config", () => {
   beforeEach(() => {
-    resetNoncesForTests();
+    for (const key of ENV_KEYS) {
+      saved[key] = process.env[key];
+      delete process.env[key];
+    }
+  });
+
+  afterEach(() => {
+    for (const key of ENV_KEYS) {
+      const value = saved[key];
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+
+  it("stays off when payTo is the burn placeholder", () => {
     process.env.AEFI_X402_ENABLED = "true";
-    process.env.AEFI_API_KEY = "dev-local-key";
     process.env.AEFI_X402_PAY_TO = "0x000000000000000000000000000000000000aef1";
-    process.env.AEFI_X402_PRICE_ATOMIC = "10000";
-    process.env.AEFI_X402_DEV_ACCEPT = "true";
-    delete process.env.AEFI_X402_FACILITATOR_URL;
+    const cfg = loadX402Config();
+    assert.equal(cfg.enabled, false);
+    assert.equal(isUsablePayTo(cfg.payTo.toLowerCase()), false);
   });
 
-  it("challenges without payment signature", async () => {
+  it("enforces when a real payTo is set", () => {
+    process.env.AEFI_X402_ENABLED = "true";
+    process.env.AEFI_X402_PAY_TO = "0x1111111111111111111111111111111111111111";
     const cfg = loadX402Config();
-    const gate = await x402Gate("/v1/payments/verify", headers(), cfg);
-    assert.equal(gate.allowed, false);
-    if (!gate.allowed) {
-      assert.equal(gate.status, 402);
-      assert.ok(gate.paymentRequiredHeader);
-    }
+    assert.equal(cfg.enabled, true);
+    assert.equal(cfg.priceUsdc, "0.01");
   });
 
-  it("allows api key bypass", async () => {
+  it("builds an MPP Payment challenge", () => {
+    process.env.AEFI_RESOURCE_BASE_URL = "https://api.aefi.io";
     const cfg = loadX402Config();
-    const gate = await x402Gate(
-      "/v1/payments/verify",
-      headers({ "x-aefi-api-key": "dev-local-key" }),
-      cfg,
-    );
-    assert.equal(gate.allowed, true);
-  });
-
-  it("accepts valid payment signature in dev mode", async () => {
-    const cfg = loadX402Config();
-    const sig = validSig(cfg.payTo, "10000", "0x" + "11".repeat(32));
-    const gate = await x402Gate(
-      "/v1/payments/verify",
-      headers({ "PAYMENT-SIGNATURE": sig }),
-      cfg,
-    );
-    assert.equal(gate.allowed, true);
-    if (gate.allowed) {
-      assert.ok(gate.paymentResponse);
-      assert.equal(gate.settlement?.mode, "dev");
-    }
-  });
-
-  it("rejects nonce replay", async () => {
-    const cfg = loadX402Config();
-    const nonce = "0x" + "22".repeat(32);
-    const sig = validSig(cfg.payTo, "10000", nonce);
-    const first = await x402Gate(
-      "/v1/payments/verify",
-      headers({ "PAYMENT-SIGNATURE": sig }),
-      cfg,
-    );
-    assert.equal(first.allowed, true);
-    const second = await x402Gate(
-      "/v1/payments/verify",
-      headers({ "PAYMENT-SIGNATURE": sig }),
-      cfg,
-    );
-    assert.equal(second.allowed, false);
+    const header = paymentWwwAuthenticate(cfg);
+    assert.match(header, /^Payment /);
+    assert.match(header, /currency="USDC"/);
+    assert.match(header, /amount="0.010000"/);
   });
 });

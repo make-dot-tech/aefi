@@ -48,7 +48,7 @@ Production layout: [`deploy/README.md`](deploy/README.md).
 - Matcher correlators → Neo4j (shared Aura)  
 - Wave A API on graph evidence (provider search, explain, verify, MCP)  
 - Drools confidence disposition service  
-- x402 paywall gate (off by default in prod)  
+- x402 paywall via Circle Gateway (`GET /openapi.json`, $0.01 USDC, multi-chain `accepts[]`)  
 - Evidence Studio + brand site / docs on `aefi.io`  
 - GCP deploy (`aefi-io`): Cloud Run, Cloud SQL, Cloudflare Tunnel, Cloud Build on `main`
 

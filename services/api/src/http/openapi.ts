@@ -1,0 +1,604 @@
+import {
+  X402_PRICE_AMOUNT,
+  X402_PRICE_CURRENCY,
+} from "../x402/config.js";
+
+export const X_PAYMENT_INFO = {
+  price: {
+    mode: "fixed",
+    currency: X402_PRICE_CURRENCY,
+    amount: X402_PRICE_AMOUNT,
+  },
+  protocols: [{ x402: {} }, { mpp: {} }],
+} as const;
+
+export const X_GUIDANCE =
+  "aefi is a read-only evidence and financial-intelligence API for agent commerce on Arc. Call it to verify a USDC payment, explain a transaction, look up an ERC-8183 job, inspect observed agent activity, or search providers by capability and job performance. " +
+  "Inputs: JSON bodies or path ids. Paid routes cost 0.01 USDC via x402 (PAYMENT-SIGNATURE) or MPP (WWW-Authenticate: Payment). Optional human bypass: x-aefi-api-key. Free: GET /health, GET /openapi.json, GET /v1/scenarios. " +
+  "Paid: POST /v1/payments/verify (tx_hash | payment_id | transfer_ref), GET /v1/transactions/{hash}, GET /v1/jobs/{job_id}, GET /v1/agents/{id}/activity, POST /v1/providers/search, GET /v1/providers/{id}, POST /v1/authority/check, GET /v1/tasks/{task_execution_id}. " +
+  "Outputs: application/json AefiEnvelope { summary, confidence, confidence_reasons, evidence, coverage, result? }. Missing graph data is HTTP 200 with coverage gaps, not 404. " +
+  "When to call: before trusting a provider, after a payment, or to explain onchain activity. Do not call to send funds, register agents, or write escrow — aefi does not mutate wallets, registries, or jobs.";
+
+const CONFIDENCE = {
+  type: "string",
+  description: "Disposition confidence for the conclusion.",
+  enum: ["high", "medium", "low", "unverified"],
+};
+
+const envelopeContent = {
+  description: "Evidence envelope",
+  content: {
+    "application/json": {
+      schema: { $ref: "#/components/schemas/AefiEnvelope" },
+    },
+  },
+};
+
+const paymentRequiredResponse = {
+  description:
+    "Payment required. Body is x402 v2 with accepts[] (one entry per Gateway network). Also sent as base64 PAYMENT-REQUIRED and MPP WWW-Authenticate: Payment.",
+  content: {
+    "application/json": {
+      schema: { $ref: "#/components/schemas/PaymentRequired" },
+    },
+  },
+};
+
+const paidGet = {
+  "200": envelopeContent,
+  "402": paymentRequiredResponse,
+};
+
+const paidPost = {
+  "200": envelopeContent,
+  "402": paymentRequiredResponse,
+};
+
+export function getOpenApiDocument(): Record<string, unknown> {
+  return {
+    openapi: "3.1.0",
+    info: {
+      title: "aefi API",
+      version: "0.1.0",
+      summary: "Evidence and financial intelligence for agent commerce",
+      description:
+        "Read-only evidence API: verify payments, explain transactions, look up jobs, search providers. Paid per call in USDC via x402 / MPP.",
+      contact: {
+        name: "aefi",
+        email: "hello@aefi.io",
+        url: "https://x.com/aefi_io",
+      },
+      "x-guidance": X_GUIDANCE,
+    },
+    externalDocs: {
+      description: "HTTP API usage, auth quirks, and examples",
+      url: "https://aefi.io/docs/api.html",
+    },
+    servers: [
+      { url: "https://api.aefi.io", description: "Production HTTPS" },
+      { url: "http://localhost:8787", description: "Local scaffold" },
+    ],
+    tags: [
+      { name: "meta", description: "Discovery and liveness (free)" },
+      { name: "evidence", description: "Paid evidence and search tools" },
+    ],
+    paths: {
+      "/health": {
+        get: {
+          operationId: "health",
+          tags: ["meta"],
+          summary: "Liveness",
+          description: "Free liveness probe. Reports Neo4j connectivity and whether x402 is enforced.",
+          responses: {
+            "200": {
+              description: "OK",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/HealthResponse" },
+                },
+              },
+            },
+          },
+        },
+      },
+      "/openapi.json": {
+        get: {
+          operationId: "getOpenApi",
+          tags: ["meta"],
+          summary: "OpenAPI 3.1 document",
+          description: "Free machine-readable spec for agent discovery.",
+          responses: {
+            "200": {
+              description: "OpenAPI 3.1 document",
+              content: {
+                "application/json": {
+                  schema: { type: "object", additionalProperties: true },
+                },
+              },
+            },
+          },
+        },
+      },
+      "/v1/scenarios": {
+        get: {
+          operationId: "listScenarios",
+          tags: ["meta"],
+          summary: "Studio search presets",
+          description: "Free curated natural-language search presets for Evidence Studio.",
+          responses: {
+            "200": {
+              description: "Scenario list",
+              content: {
+                "application/json": {
+                  schema: { $ref: "#/components/schemas/ScenariosResponse" },
+                },
+              },
+            },
+          },
+        },
+      },
+      "/v1/payments/verify": {
+        post: {
+          operationId: "verifyPayment",
+          tags: ["evidence"],
+          summary: "Verify a payment against evidence",
+          description:
+            "Look up a settled payment by tx hash, payment id, or transfer ref and return linked jobs, memos, and coverage gaps.",
+          "x-mcp-tool": "verify_payment",
+          "x-payment-info": X_PAYMENT_INFO,
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/VerifyPaymentRequest" },
+              },
+            },
+          },
+          responses: paidPost,
+        },
+      },
+      "/v1/transactions/{hash}": {
+        get: {
+          operationId: "explainTransaction",
+          tags: ["evidence"],
+          summary: "Explain a transaction",
+          description: "Return a structured evidence-backed explanation of a transaction hash.",
+          "x-mcp-tool": "explain_transaction",
+          "x-payment-info": X_PAYMENT_INFO,
+          parameters: [
+            {
+              name: "hash",
+              in: "path",
+              required: true,
+              description: "0x-prefixed transaction hash to explain.",
+              schema: {
+                type: "string",
+                description: "0x-prefixed transaction hash.",
+              },
+            },
+          ],
+          responses: paidGet,
+        },
+      },
+      "/v1/jobs/{job_id}": {
+        get: {
+          operationId: "lookupJob",
+          tags: ["evidence"],
+          summary: "Look up an ERC-8183 job and linked evidence",
+          description: "Return job parties, outcomes, and linked payments when present in the graph.",
+          "x-mcp-tool": "lookup_job",
+          "x-payment-info": X_PAYMENT_INFO,
+          parameters: [
+            {
+              name: "job_id",
+              in: "path",
+              required: true,
+              description: "ERC-8183 job id as stored in the evidence graph.",
+              schema: {
+                type: "string",
+                description: "ERC-8183 job identifier.",
+              },
+            },
+          ],
+          responses: paidGet,
+        },
+      },
+      "/v1/agents/{id}/activity": {
+        get: {
+          operationId: "getAgentActivity",
+          tags: ["evidence"],
+          summary: "Agent activity timeline",
+          description: "Observed payments, jobs, and evidence for an agent identity or wallet.",
+          "x-mcp-tool": "get_agent_activity",
+          "x-payment-info": X_PAYMENT_INFO,
+          parameters: [
+            {
+              name: "id",
+              in: "path",
+              required: true,
+              description:
+                "Agent id (agent:erc8004:<chain>:<tokenId>, agent:wallet:<chain>:<address>) or a raw 0x wallet.",
+              schema: {
+                type: "string",
+                description: "Agent identity or wallet address.",
+              },
+            },
+          ],
+          responses: paidGet,
+        },
+      },
+      "/v1/authority/check": {
+        post: {
+          operationId: "checkAuthority",
+          tags: ["evidence"],
+          summary: "Mandate + task authority assessment",
+          description:
+            "Assess whether an action was authorized. Returns an honest gap envelope until mandate adapters are wired.",
+          "x-mcp-tool": "check_authority",
+          "x-payment-info": X_PAYMENT_INFO,
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/CheckAuthorityRequest" },
+              },
+            },
+          },
+          responses: paidPost,
+        },
+      },
+      "/v1/tasks/{task_execution_id}": {
+        get: {
+          operationId: "traceTask",
+          tags: ["evidence"],
+          summary: "Trace a task execution",
+          description: "Trace a task execution id. Returns coverage gaps until task adapters exist.",
+          "x-mcp-tool": "trace_task",
+          "x-payment-info": X_PAYMENT_INFO,
+          parameters: [
+            {
+              name: "task_execution_id",
+              in: "path",
+              required: true,
+              description: "Task execution identifier from the agent runtime or marketplace.",
+              schema: {
+                type: "string",
+                description: "Task execution identifier.",
+              },
+            },
+          ],
+          responses: paidGet,
+        },
+      },
+      "/v1/providers/search": {
+        post: {
+          operationId: "searchProviders",
+          tags: ["evidence"],
+          summary: "Search providers by structured filters",
+          description:
+            "Rank providers by natural-language capability intent and/or performance filters. result includes results plus pagination fields.",
+          "x-mcp-tool": "search_providers",
+          "x-payment-info": X_PAYMENT_INFO,
+          requestBody: {
+            required: true,
+            content: {
+              "application/json": {
+                schema: { $ref: "#/components/schemas/ProviderSearchRequest" },
+              },
+            },
+          },
+          responses: paidPost,
+        },
+      },
+      "/v1/providers/{id}": {
+        get: {
+          operationId: "getProvider",
+          tags: ["evidence"],
+          summary: "Single provider performance envelope",
+          description: "Return performance metrics and evidence for one provider id.",
+          "x-mcp-tool": "get_provider",
+          "x-payment-info": X_PAYMENT_INFO,
+          parameters: [
+            {
+              name: "id",
+              in: "path",
+              required: true,
+              description: "Provider id as returned in search results.",
+              schema: {
+                type: "string",
+                description: "Provider identifier.",
+              },
+            },
+          ],
+          responses: paidGet,
+        },
+      },
+    },
+    components: {
+      schemas: {
+        HealthResponse: {
+          type: "object",
+          required: ["ok", "service"],
+          properties: {
+            ok: { type: "boolean", description: "Process is serving HTTP." },
+            service: { type: "string", description: "Service id (aefi-api)." },
+            neo4j: {
+              type: "string",
+              description: "Graph connectivity: ok, unavailable, or unknown.",
+            },
+            x402: {
+              type: "string",
+              description: "enforced when the paywall is on; otherwise off.",
+            },
+          },
+        },
+        ScenariosResponse: {
+          type: "object",
+          required: ["scenarios"],
+          properties: {
+            scenarios: {
+              type: "array",
+              description: "Curated search presets.",
+              items: { type: "object", additionalProperties: true },
+            },
+          },
+        },
+        VerifyPaymentRequest: {
+          type: "object",
+          description: "Send exactly one identifier when possible; extras are ignored after the first hit.",
+          additionalProperties: false,
+          properties: {
+            tx_hash: {
+              type: "string",
+              description: "0x-prefixed transaction hash that settled the payment.",
+            },
+            payment_id: {
+              type: "string",
+              description: "Graph payment id (fastest unique lookup), e.g. pay:<chain>:<tx>:<log>.",
+            },
+            transfer_ref: {
+              type: "string",
+              description: "Transfer or event reference (xfer:… or evt:…) mapped onto a payment when possible.",
+            },
+            refresh: {
+              type: "boolean",
+              default: false,
+              description: "Reserved. Ignored today; send false.",
+            },
+          },
+        },
+        CheckAuthorityRequest: {
+          type: "object",
+          description: "Authority check inputs. Adapters are not wired yet; fields still document the intended call.",
+          additionalProperties: false,
+          properties: {
+            mandate_id: {
+              type: "string",
+              description: "Mandate or delegation identifier if known.",
+            },
+            principal: {
+              type: "string",
+              description: "Principal wallet or identity that issued authority.",
+            },
+            agent_id: {
+              type: "string",
+              description: "Agent identity alleged to have acted.",
+            },
+            task_id: {
+              type: "string",
+              description: "Task or job the action was supposed to serve.",
+            },
+            action: {
+              type: "string",
+              description: "Action under review (e.g. transfer, complete_job).",
+            },
+          },
+        },
+        ProviderSearchRequest: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            query: {
+              type: "string",
+              description: "Natural-language capability intent used for semantic recall.",
+            },
+            capability: {
+              type: "string",
+              description: "Optional exact capability tag to require.",
+            },
+            minimum_verified_jobs: {
+              type: "number",
+              description: "Minimum count of verified completed jobs.",
+            },
+            minimum_completion_rate: {
+              type: "number",
+              description: "Minimum job completion rate (0–1).",
+            },
+            minimum_confidence: {
+              ...CONFIDENCE,
+              description: "Drop providers below this confidence.",
+            },
+            sort_by: {
+              type: "string",
+              enum: ["score", "verified_jobs", "completion_rate", "recent"],
+              default: "score",
+              description: "Backend sort key after scoring; ties break on provider_id.",
+            },
+            sort_dir: {
+              type: "string",
+              enum: ["asc", "desc"],
+              default: "desc",
+              description: "Sort direction for sort_by.",
+            },
+            limit: {
+              type: "number",
+              minimum: 1,
+              maximum: 100,
+              default: 25,
+              description: "Page size.",
+            },
+            offset: {
+              type: "number",
+              minimum: 0,
+              default: 0,
+              description: "Number of ranked rows to skip.",
+            },
+            semantic_top_k: {
+              type: "number",
+              minimum: 1,
+              maximum: 50,
+              description: "How many semantic candidates to fuse before performance ranking.",
+            },
+          },
+        },
+        Confidence: CONFIDENCE,
+        Coverage: {
+          type: "object",
+          required: ["status", "known_gaps"],
+          properties: {
+            status: {
+              type: "string",
+              enum: ["complete", "substantial", "partial", "minimal", "unknown"],
+              description: "How complete the supporting evidence is.",
+            },
+            known_gaps: {
+              type: "array",
+              description: "Explicit missing adapters or records.",
+              items: { type: "string", description: "Gap code or note." },
+            },
+          },
+        },
+        EvidenceRef: {
+          type: "object",
+          required: ["evidence_id", "type", "source", "reference"],
+          properties: {
+            evidence_id: {
+              type: "string",
+              description: "Stable id for this evidence row.",
+            },
+            type: { type: "string", description: "Evidence type (payment, memo, job, …)." },
+            source: { type: "string", description: "Store the row was read from (typically neo4j)." },
+            reference: { type: "string", description: "Join key or onchain reference." },
+            supports: {
+              type: "array",
+              description: "Claim codes this row supports.",
+              items: { type: "string", description: "Claim code." },
+            },
+          },
+        },
+        AefiEnvelope: {
+          type: "object",
+          required: [
+            "summary",
+            "confidence",
+            "confidence_reasons",
+            "confidence_model_version",
+            "evidence",
+            "coverage",
+          ],
+          properties: {
+            summary: {
+              type: "string",
+              description: "Short natural-language conclusion.",
+            },
+            result: {
+              description: "Tool-specific payload (search hits, payment view, …).",
+            },
+            confidence: { $ref: "#/components/schemas/Confidence" },
+            confidence_reasons: {
+              type: "array",
+              description: "Reason codes behind confidence.",
+              items: { type: "string", description: "Reason code." },
+            },
+            confidence_model_version: {
+              type: "string",
+              description: "Disposition model version that produced this envelope.",
+            },
+            evidence: {
+              type: "array",
+              description: "Supporting evidence references.",
+              items: { $ref: "#/components/schemas/EvidenceRef" },
+            },
+            coverage: { $ref: "#/components/schemas/Coverage" },
+            graph_refs: {
+              type: "object",
+              description: "Neo4j node ids for follow-up.",
+              properties: {
+                node_ids: {
+                  type: "array",
+                  description: "Graph node ids cited in this envelope.",
+                  items: { type: "string", description: "Node id." },
+                },
+              },
+            },
+          },
+        },
+        PaymentRequirements: {
+          type: "object",
+          description: "One x402 accept option (usually one per chain).",
+          required: ["scheme", "network", "asset", "amount", "payTo"],
+          properties: {
+            scheme: {
+              type: "string",
+              description: "x402 scheme name (Gateway uses exact).",
+            },
+            network: {
+              type: "string",
+              description: "CAIP-2 chain id the buyer may pay on, e.g. eip155:8453.",
+            },
+            asset: {
+              type: "string",
+              description: "USDC contract address on that network.",
+            },
+            amount: {
+              type: "string",
+              description: "Atomic USDC (6 decimals) required, e.g. 10000 for 0.01.",
+            },
+            maxAmountRequired: {
+              type: "string",
+              description: "Alias some clients read instead of amount.",
+            },
+            payTo: {
+              type: "string",
+              description: "Seller wallet that receives the payment.",
+            },
+            maxTimeoutSeconds: {
+              type: "number",
+              description: "Authorization validity window in seconds.",
+            },
+            extra: {
+              type: "object",
+              additionalProperties: true,
+              description: "GatewayWalletBatched EIP-712 domain (name, version, verifyingContract).",
+            },
+          },
+        },
+        PaymentRequired: {
+          type: "object",
+          required: ["x402Version", "accepts"],
+          properties: {
+            x402Version: {
+              type: "integer",
+              description: "x402 protocol version (2 for Gateway).",
+            },
+            error: { type: "string", description: "Why payment is required or failed." },
+            resource: {
+              type: "object",
+              description: "The paid resource being requested.",
+              properties: {
+                url: { type: "string", description: "Request path or absolute URL." },
+                description: { type: "string", description: "Human-readable resource name." },
+                mimeType: { type: "string", description: "Expected response MIME type." },
+              },
+            },
+            accepts: {
+              type: "array",
+              description: "Accepted payment options; one per Gateway-supported network.",
+              items: { $ref: "#/components/schemas/PaymentRequirements" },
+            },
+          },
+        },
+      },
+    },
+  };
+}

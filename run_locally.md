@@ -106,7 +106,7 @@ Root `.env` is what the API / indexer / matcher expect when run from the monorep
 | `AEFI_HTTP_PORT` | `8787` | API |
 | `AEFI_API_KEY` | `dev-local-key` | Studio sends `x-aefi-api-key` |
 | `AEFI_RULES_ENABLED` | `false` | Skip Drools `:8090` noise in demo |
-| `AEFI_X402_ENABLED` | `false` | Open `/v1` without payment headers |
+| `AEFI_X402_ENABLED` | `false` | Open `/v1` without payment headers. Set `true` plus a real `AEFI_X402_PAY_TO` to enforce $0.01 USDC via Circle Gateway. |
 
 ### `apps/studio/.env`
 
@@ -138,6 +138,8 @@ Smoke:
 ```bash
 curl -s http://localhost:8787/health | jq .
 # expect neo4j: "ok" when the graph container is up
+curl -s http://localhost:8787/openapi.json | jq .openapi
+# expect "3.1.0"
 
 curl -s -X POST http://localhost:8787/v1/providers/search \
   -H 'content-type: application/json' \

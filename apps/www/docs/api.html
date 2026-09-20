@@ -26,11 +26,18 @@
 
         <h2>Auth</h2>
         <p>
-          x402 is implemented and <strong>off</strong> in production today
-          (<code>GET /health</code> reports <code>x402: "off"</code>). When
-          enabled, missing payment returns <code>402</code> with
-          <code>PAYMENT-REQUIRED</code>. A configured
-          <code>x-aefi-api-key</code> can bypass for humans.
+          Agents pay <strong>0.01 USDC</strong> per call (x402 + MPP) on
+          <code>/v1/*</code> except <code>/v1/scenarios</code>. Unpaid calls
+          return <code>402</code> with an <code>accepts[]</code> body,
+          <code>PAYMENT-REQUIRED</code>, and
+          <code>WWW-Authenticate: Payment</code>. Retry with
+          <code>PAYMENT-SIGNATURE</code>. Humans and Evidence Studio may send
+          <code>x-aefi-api-key</code> instead.
+        </p>
+        <p>
+          Machine-readable spec (free):
+          <a href="https://api.aefi.io/openapi.json"><code>GET https://api.aefi.io/openapi.json</code></a>.
+          Contact: <a href="mailto:hello@aefi.io">hello@aefi.io</a>.
         </p>
 
         <h2>Endpoints</h2>

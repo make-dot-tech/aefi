@@ -1,7 +1,7 @@
 # Production deployment
 
 **Status**: Draft  
-**Last updated**: 2026-09-15
+**Last updated**: 2026-09-20
 
 Cloud Run services use **`--ingress=internal`**. Public traffic reaches them only
 through a **Cloudflare Tunnel** on a GCE `cloudflared` VM.
@@ -24,8 +24,8 @@ Browser → Cloudflare (DNS + WAF + Tunnel)
             └─ api.aefi.io               → Cloud Run aefi-api
                                               │
                                               ▼
-                                         Neo4j Aura (shared)
-Indexer / matcher (internal Cloud Run workers)
+                                         Neo4j Aura (paused 2026-09-16)
+Indexer / matcher Cloud Run — deleted until mainnet 8004/8183
   └─ Cloud SQL aefi-postgres (us-central1)
        └─ also: Beekeeper via authorized network 108.65.165.248/32
 ```
@@ -35,8 +35,7 @@ Indexer / matcher (internal Cloud Run workers)
 | `aefi-www` | Cloud Run | Vite MPA (landing + docs) + nginx, internal ingress |
 | `aefi-studio` | Cloud Run | Vite static + nginx, baked `VITE_AEFI_API_URL` |
 | `aefi-api` | Cloud Run | Hono API, internal ingress |
-| `aefi-indexer` | Cloud Run | Always-on worker (`min=1`, no CPU throttle) |
-| `aefi-matcher` | Cloud Run | Always-on worker → Neo4j |
+| `aefi-indexer` / `aefi-matcher` | — | Deleted 2026-09-16 (cost pause). Recreate as `*-mainnet` — [`mainnet.md`](./mainnet.md) |
 | `aefi-rules` | Cloud Run | Drools disposition (`min=1`), internal only |
 | `aefi-migrate` | Cloud Run Job | Applies `services/indexer/migrations` |
 | `cloudflared-tunnel` | GCE e2-micro | Tunnel connector (provision separately) |
@@ -125,7 +124,7 @@ new ABI pack + **new** indexer/matcher services; shared Postgres/Aura; flip
 | Dimension | Testnet (phase 1) | Mainnet |
 | --- | --- | --- |
 | Cloud Run API | `aefi-api` | flip `ARC_CHAIN_ID` **or** `aefi-api-mainnet` |
-| Workers | `aefi-indexer` / `aefi-matcher` | `aefi-indexer-mainnet` / `aefi-matcher-mainnet` |
+| Workers | deleted (testnet) | `aefi-indexer-mainnet` / `aefi-matcher-mainnet` |
 | `ARC_CHAIN_ID` | `5042002` | published mainnet id |
 | Matcher cursor | `neo4j:5042002` | `neo4j:<mainnet>` |
 | ABI dir | `/abi/5042002` | `/abi/<mainnet>` |
@@ -156,7 +155,20 @@ Secrets required before first deploy:
 | `AEFI-NEO4J-URI` | Aura URI (`neo4j+s://…`) |
 | `AEFI-NEO4J-USER` | Aura username |
 | `AEFI-NEO4J-PASSWORD` | Aura password |
-| `AEFI-API-KEY` | Studio / MCP API key |
+| `AEFI-API-KEY` | Studio / MCP API key (also baked into the studio image at build) |
+
+x402 seller `payTo` is public (it appears in every 402 `accepts[]`), so it is a Cloud Run env var, not a secret:
+
+`0xaEF1f897140C9a01a291d9e09865B519c997691B`
+
+Keep the **private key** only in the wallet that controls that address. Cloud Build still needs Secret Manager access to bake `AEFI-API-KEY` into studio:
+
+```bash
+PROJECT_NUMBER="$(gcloud projects describe aefi-io --format='value(projectNumber)')"
+gcloud secrets add-iam-policy-binding AEFI-API-KEY --project=aefi-io \
+  --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+  --role=roles/secretmanager.secretAccessor
+```
 
 ## Cloudflare Tunnel VM (checklist)
 

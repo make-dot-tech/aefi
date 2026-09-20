@@ -11,7 +11,7 @@ import type {
 const API_URL = (
   import.meta.env.VITE_AEFI_API_URL ?? "http://localhost:8787"
 ).replace(/\/$/, "");
-const API_KEY = import.meta.env.VITE_AEFI_API_KEY ?? "dev-local-key";
+const API_KEY = import.meta.env.VITE_AEFI_API_KEY || "dev-local-key";
 
 export type DataMode = "live" | "offline";
 

@@ -3,7 +3,8 @@ import { cors } from "hono/cors";
 import { SEARCH_SCENARIOS } from "../scenarios.js";
 import * as caps from "../handlers/capabilities.js";
 import { getDriver } from "../graph/queries.js";
-import { loadX402Config, x402Gate } from "../x402/gate.js";
+import { loadX402Config, createGatewayHonoMiddleware } from "../x402/gate.js";
+import { getOpenApiDocument } from "./openapi.js";
 
 const DEFAULT_CORS_ORIGINS = [
   "http://localhost:5173",
@@ -44,11 +45,13 @@ export function createApp() {
         "Content-Type",
         "x-aefi-api-key",
         "PAYMENT-SIGNATURE",
+        "Payment-Signature",
         "PAYMENT-REQUIRED",
       ],
       exposeHeaders: [
         "PAYMENT-REQUIRED",
         "PAYMENT-RESPONSE",
+        "WWW-Authenticate",
         "x-aefi-auth",
       ],
       allowMethods: ["GET", "POST", "OPTIONS"],
@@ -71,32 +74,19 @@ export function createApp() {
     });
   });
 
-  app.use("/v1/*", async (c, next) => {
-    const path = c.req.path;
-    if (path === "/v1/scenarios") {
-      await next();
-      return;
-    }
-    const gate = await x402Gate(path, c.req.raw.headers, x402);
-    if (!gate.allowed) {
-      if (gate.paymentRequiredHeader) {
-        c.header("PAYMENT-REQUIRED", gate.paymentRequiredHeader);
-      }
-      return c.json(gate.body, gate.status);
-    }
-    if (gate.paymentResponse) {
-      c.header("PAYMENT-RESPONSE", gate.paymentResponse);
-      c.header("x-aefi-auth", "x402");
-    } else if (
-      x402.apiKey &&
-      c.req.header("x-aefi-api-key") === x402.apiKey
-    ) {
-      c.header("x-aefi-auth", "api-key");
-    } else if (!x402.enabled) {
-      c.header("x-aefi-auth", "dev-open");
-    }
-    await next();
+  app.get("/openapi.json", (c) => {
+    c.header("Cache-Control", "public, max-age=60");
+    return c.json(getOpenApiDocument());
   });
+
+  if (x402.enabled) {
+    app.use("/v1/*", createGatewayHonoMiddleware(x402));
+  } else {
+    app.use("/v1/*", async (c, next) => {
+      c.header("x-aefi-auth", "dev-open");
+      await next();
+    });
+  }
 
   app.get("/v1/scenarios", (c) => {
     return c.json({ scenarios: SEARCH_SCENARIOS });

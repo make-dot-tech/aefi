@@ -1,7 +1,7 @@
 # aefi contracts
 
 **Status**: Draft
-**Last updated**: 2026-08-08
+**Last updated**: 2026-09-20
 
 Language-neutral source of truth for events, graph model, disposition, and API/MCP shapes.
 

@@ -1,7 +1,7 @@
 # aefi API (TypeScript)
 
 **Status**: Draft
-**Last updated**: 2026-08-08
+**Last updated**: 2026-09-20
 
 HTTP `/v1` + MCP server `aefi`. Wave A handlers read the Neo4j evidence graph.
 
@@ -49,13 +49,24 @@ pnpm --filter @aefi/api embed:providers
 
 `search_providers` accepts optional `query` (natural-language semantic recall) fused with graph performance scores. Provider rows resolve ERC-8004 identity onto job providers via shared wallets.
 
-x402 gate (`AEFI_X402_ENABLED`):
+x402 gate (`AEFI_X402_ENABLED`, Circle Gateway via `@circle-fin/x402-batching`):
 
-- **off** (default): open local/dev access  
-- **on**: agents must send `PAYMENT-SIGNATURE` (x402 v2); missing → `402` + `PAYMENT-REQUIRED`  
-- Human/dev bypass: `x-aefi-api-key: $AEFI_API_KEY`  
-- Verify via facilitator (`AEFI_X402_FACILITATOR_URL`) or `AEFI_X402_DEV_ACCEPT=true` structural accept  
+- **off** (default locally): open `/v1` without payment headers
+- **on** (requires a real `AEFI_X402_PAY_TO` wallet): unpaid paid-routes return **HTTP 402** with x402 `accepts[]` (all Gateway networks), `PAYMENT-REQUIRED`, and MPP `WWW-Authenticate: Payment`
+- Machine discovery: `GET /openapi.json` (OpenAPI 3.1, always free)
+- Human/studio bypass: `x-aefi-api-key: $AEFI_API_KEY`
+- Settlement: `createGatewayMiddleware({ sellerAddress }).require("$0.01")` → Gateway `settle()`
 - Success responses include `PAYMENT-RESPONSE`
+
+Local unpaid challenge (needs a real `AEFI_X402_PAY_TO` and network to Circle Gateway):
+
+```bash
+AEFI_X402_ENABLED=true AEFI_X402_PAY_TO=0xaEF1f897140C9a01a291d9e09865B519c997691B \
+  pnpm --filter @aefi/api test
+curl -sI http://localhost:8787/openapi.json | head
+curl -sI -X POST http://localhost:8787/v1/payments/verify -H 'content-type: application/json' -d '{}'
+# 402 + PAYMENT-REQUIRED + WWW-Authenticate: Payment
+```
 
 Disposition: API posts FactPayload to `AEFI_RULES_URL` (`services/rules`); falls back to local TS composer if the rules service is down. For local use without Drools, set `AEFI_RULES_ENABLED=false` so the API does not attempt `:8090`.
 
