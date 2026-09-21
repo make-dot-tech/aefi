@@ -4,6 +4,14 @@ const local =
   location.hostname === "localhost" || location.hostname === "127.0.0.1";
 const demo = local ? "http://localhost:5173" : "https://demo.aefi.io";
 
+for (const table of document.querySelectorAll("table")) {
+  if (table.parentElement?.classList.contains("scroll-x")) continue;
+  const wrap = document.createElement("div");
+  wrap.className = "scroll-x";
+  table.replaceWith(wrap);
+  wrap.append(table);
+}
+
 for (const a of document.querySelectorAll<HTMLAnchorElement>("[data-demo-href]")) {
   a.href = demo;
 }
