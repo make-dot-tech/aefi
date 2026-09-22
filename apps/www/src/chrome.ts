@@ -5,11 +5,11 @@ const API = "https://api.aefi.io";
 const MAIL = "hello@aefi.io";
 const X = "https://x.com/aefi_io";
 const CIRCLE_SCORE = "https://agents.circle.com/sell/score?url=api.aefi.io";
-const CIRCLE_BADGE = "https://agents.circle.com/sell/score/badge?url=api.aefi.io";
+const CIRCLE_BADGE = "/brand/accepts-agent-payments.svg";
 
 export function circleBadgeHtml(): string {
   return `<a class="circle-badge" href="${CIRCLE_SCORE}" rel="noreferrer">
-    <img src="${CIRCLE_BADGE}" alt="Accepts Agent Payments" height="32" />
+    <img src="${CIRCLE_BADGE}" alt="Accepts Agent Payments" width="193" height="30" />
   </a>`;
 }
 
